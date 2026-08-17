@@ -224,3 +224,102 @@ test("sheet opens and closes from the side", async ({ page }) => {
   await dialog.getByRole("button", { name: "Close" }).click();
   await expect(dialog).toBeHidden();
 });
+
+// ---------------------------------------------------------------------------
+// Dialog focus management (WAI-ARIA dialog pattern)
+// ---------------------------------------------------------------------------
+test("dialog traps focus and restores it on close", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("dialog-fixture");
+  const openBtn = fixture.getByTestId("dialog-open");
+  const dialog = page.getByTestId("dialog-content");
+
+  await openBtn.click();
+  await expect(dialog).toBeVisible();
+
+  // Focus moved into the dialog on open (autofocus first focusable).
+  await expect(openBtn).not.toBeFocused();
+  const confirm = dialog.getByTestId("dialog-confirm");
+  const cancel = dialog.getByTestId("dialog-cancel");
+  await expect(confirm).toBeFocused();
+
+  // Tab moves to the next focusable inside the dialog.
+  await page.keyboard.press("Tab");
+  await expect(cancel).toBeFocused();
+
+  // Tab from the last element wraps back to the first.
+  await page.keyboard.press("Tab");
+  await expect(confirm).toBeFocused();
+
+  // Shift+Tab from the first element wraps to the last.
+  await page.keyboard.press("Shift+Tab");
+  await expect(cancel).toBeFocused();
+
+  // Escape closes and focus returns to the trigger.
+  await page.keyboard.press("Escape");
+  await expect(dialog).toBeHidden();
+  await expect(openBtn).toBeFocused();
+});
+
+test("sheet traps focus and restores it on close", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("sheet-fixture");
+  const openBtn = fixture.getByTestId("sheet-open");
+
+  await openBtn.click();
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeVisible();
+
+  // Close button (first focusable in the sheet) receives focus on open.
+  // The focus effect runs on a microtask after the prop change, so retry briefly.
+  await expect(async () => {
+    await expect(page.getByRole("button", { name: "Close" })).toBeFocused();
+  }).toPass({ timeout: 5000 });
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog", { name: "Settings" })).toBeHidden();
+  await expect(openBtn).toBeFocused();
+});
+
+// ---------------------------------------------------------------------------
+// Select keyboard navigation (WAI-ARIA listbox pattern)
+// ---------------------------------------------------------------------------
+test("select supports keyboard navigation and typeahead", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("select-fixture");
+  const trigger = fixture.getByRole("button", { name: "Pick a fruit" });
+
+  // ArrowDown opens the listbox.
+  await trigger.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(fixture.getByRole("listbox")).toBeVisible();
+
+  // aria-activedescendant points at the current value (Apple = option 0).
+  await expect(trigger).toHaveAttribute("aria-expanded", "true");
+  await expect(trigger).toHaveAttribute("aria-activedescendant", "chx-select-opt-0");
+
+  // ArrowDown moves highlight to Banana.
+  await page.keyboard.press("ArrowDown");
+  await expect(trigger).toHaveAttribute("aria-activedescendant", "chx-select-opt-1");
+
+  // Enter selects the highlighted option.
+  await page.keyboard.press("Enter");
+  await expect(fixture.getByTestId("select-value")).toHaveText("Chosen: Banana");
+  await expect(fixture.getByRole("listbox")).toBeHidden();
+});
+
+test("select typeahead jumps to a matching option", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("select-fixture");
+  const trigger = fixture.getByRole("button", { name: "Pick a fruit" });
+
+  await trigger.focus();
+  await page.keyboard.press("Enter"); // open
+  await expect(fixture.getByRole("listbox")).toBeVisible();
+
+  // Type "c" → highlight jumps to Cherry.
+  await page.keyboard.type("c");
+  await expect(trigger).toHaveAttribute("aria-activedescendant", "chx-select-opt-2");
+
+  await page.keyboard.press("Enter");
+  await expect(fixture.getByTestId("select-value")).toHaveText("Chosen: Cherry");
+});
