@@ -1,0 +1,19 @@
+{
+  "name": "components-e2e",
+  "version": "1.0.0",
+  "description": "Browser end-to-end tests for the Chemical components + universal libraries (SSR + hydration in a real browser)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-app.mjs",
+    "serve": "node scripts/serve.mjs",
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "test:install": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "typescript": "^7.0.2"
+  }
+}
