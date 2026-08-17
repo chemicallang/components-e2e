@@ -122,16 +122,48 @@
 // ---------------------------------------------------------------------------
 #universal ToggleGroupFixture(props) {
     return <div data-testid="togglegroup-fixture">
-        <ToggleGroup type="single" options={["Bold", "Italic", "Underline"]} defaultValue="Bold" />
+        <ToggleGroup name="tg-main" type="single" defaultValue="Bold" onValueChange={(v) => {}}
+            data-testid="tg-group">
+            <ToggleGroupItem value="Bold">Bold</ToggleGroupItem>
+            <ToggleGroupItem value="Italic">Italic</ToggleGroupItem>
+            <ToggleGroupItem value="Underline">Underline</ToggleGroupItem>
+        </ToggleGroup>
     </div>
 }
 
 // ---------------------------------------------------------------------------
-// RadioGroup (options mode)
+// ToggleGroup (multiple)
+// ---------------------------------------------------------------------------
+#universal ToggleGroupMultipleFixture(props) {
+    return <div data-testid="togglegroup-multi-fixture">
+        <ToggleGroup name="tg-multi" type="multiple" defaultValue={["Bold"]}>
+            <ToggleGroupItem value="Bold">Bold</ToggleGroupItem>
+            <ToggleGroupItem value="Italic">Italic</ToggleGroupItem>
+            <ToggleGroupItem value="Underline">Underline</ToggleGroupItem>
+        </ToggleGroup>
+    </div>
+}
+
+// ---------------------------------------------------------------------------
+// RadioGroup (children mode)
 // ---------------------------------------------------------------------------
 #universal RadioGroupFixture(props) {
     return <div data-testid="radiogroup-fixture">
-        <RadioGroup options={["Small", "Medium", "Large"]} defaultValue="Medium" />
+        <RadioGroup name="size" defaultValue="Medium" onValueChange={(v) => {}}
+            data-testid="rg-group">
+            <RadioGroupItem value="Small">Small</RadioGroupItem>
+            <RadioGroupItem value="Medium">Medium</RadioGroupItem>
+            <RadioGroupItem value="Large">Large</RadioGroupItem>
+        </RadioGroup>
+    </div>
+}
+
+// ---------------------------------------------------------------------------
+// RadioGroup without a provider: items must degrade to the default (unchecked)
+// ---------------------------------------------------------------------------
+#universal RadioGroupNoProviderFixture(props) {
+    return <div data-testid="radiogroup-noprovider-fixture">
+        <RadioGroupItem value="Solo">Solo</RadioGroupItem>
     </div>
 }
 
@@ -232,7 +264,9 @@ public func main() : int {
             <SliderFixture />
             <ToggleFixture />
             <ToggleGroupFixture />
+            <ToggleGroupMultipleFixture />
             <RadioGroupFixture />
+            <RadioGroupNoProviderFixture />
             <ToastFixture />
             <CollapsibleFixture />
             <SheetFixture />

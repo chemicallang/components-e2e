@@ -171,7 +171,7 @@ test("radio buttons are mutually exclusive", async ({ page }) => {
 });
 
 // ---------------------------------------------------------------------------
-// ToggleGroup (single)
+// ToggleGroup (single, children-based context)
 // ---------------------------------------------------------------------------
 test("toggle group single mode presses one item at a time", async ({ page }) => {
   await page.goto("/");
@@ -187,8 +187,28 @@ test("toggle group single mode presses one item at a time", async ({ page }) => 
   await expect(italic).toHaveAttribute("aria-pressed", "true");
 });
 
+// ToggleGroup multiple mode: independent toggles driven by a shared selection
+// array through context.
+test("toggle group multiple mode toggles independently", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("togglegroup-multi-fixture");
+  const bold = fixture.getByRole("button", { name: "Bold" });
+  const italic = fixture.getByRole("button", { name: "Italic" });
+
+  await expect(bold).toHaveAttribute("aria-pressed", "true");
+  await expect(italic).toHaveAttribute("aria-pressed", "false");
+
+  await italic.click();
+  await expect(bold).toHaveAttribute("aria-pressed", "true");
+  await expect(italic).toHaveAttribute("aria-pressed", "true");
+
+  await bold.click();
+  await expect(bold).toHaveAttribute("aria-pressed", "false");
+  await expect(italic).toHaveAttribute("aria-pressed", "true");
+});
+
 // ---------------------------------------------------------------------------
-// RadioGroup (options mode)
+// RadioGroup (children-based context)
 // ---------------------------------------------------------------------------
 test("radio group selects a single option", async ({ page }) => {
   await page.goto("/");
@@ -203,6 +223,28 @@ test("radio group selects a single option", async ({ page }) => {
   await large.check();
   await expect(large).toBeChecked();
   await expect(medium).not.toBeChecked();
+});
+
+// defaultValue must survive SSR → hydration: the checked state is applied by
+// the group's context on the client even though the server renders items
+// unchecked (children render before the provider's SSR function).
+test("radio group defaultValue applies after hydration", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("radiogroup-fixture");
+  await expect(fixture.getByRole("radio", { name: "Medium" })).toBeChecked();
+});
+
+// Context without a provider: a standalone item must not crash and stays
+// unchecked (registry read falls back to the default).
+test("radio item without a group stays unchecked", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("radiogroup-noprovider-fixture");
+  const solo = fixture.getByRole("radio", { name: "Solo" });
+  await expect(solo).not.toBeChecked();
+  // Clicking must not crash (no provider → ctx.write is absent) and must not
+  // corrupt other state.
+  await solo.click({ force: true });
+  await expect(fixture.getByRole("radio", { name: "Solo" })).toBeVisible();
 });
 
 // ---------------------------------------------------------------------------
