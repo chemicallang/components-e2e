@@ -32,7 +32,11 @@
 // ---------------------------------------------------------------------------
 #universal AccordionFixture(props) {
     return <div data-testid="accordion-fixture">
-        <AccordionItem title="What is Chemical?" defaultOpen={false}>A programming language.</AccordionItem>
+        <Accordion>
+            <AccordionItem data-testid="acc-item-0" title="What is Chemical?" defaultOpen={false}>A programming language.</AccordionItem>
+            <AccordionItem data-testid="acc-item-1" title="Is it fast?" defaultOpen={false}>Very fast.</AccordionItem>
+            <AccordionItem data-testid="acc-item-2" title="Who uses it?" defaultOpen={false}>Everyone.</AccordionItem>
+        </Accordion>
     </div>
 }
 
@@ -138,7 +142,7 @@
     state show = true
     return <div data-testid="toast-fixture">
         <ToastViewport data-testid="toast-viewport">
-            {show ? <Toast data-testid="toast-item" title="Saved" description="Changes saved" duration={600} onClose={() => show = false} /> : null}
+            {show ? <Toast data-testid="toast-item" title="Saved" description="Changes saved" duration={1500} onClose={() => show = false} /> : null}
         </ToastViewport>
     </div>
 }
@@ -165,6 +169,50 @@
     </div>
 }
 
+// ---------------------------------------------------------------------------
+// Dropdown (portaled menu)
+// ---------------------------------------------------------------------------
+#universal DropdownFixture(props) {
+    state open = false
+    return <div data-testid="dropdown-fixture">
+        <div style="overflow:hidden;height:60px;padding:10px;border:1px solid hsl(var(--border));">
+            <Dropdown data-testid="dropdown-control" open={open} onClose={() => open = false} onToggle={() => open = !open} trigger="Actions">
+                <DropdownItem onClick={() => open = false}>Rename</DropdownItem>
+                <DropdownItem onClick={() => open = false}>Delete</DropdownItem>
+            </Dropdown>
+        </div>
+    </div>
+}
+
+// ---------------------------------------------------------------------------
+// Error boundary: a component whose render throws is replaced by its
+// useErrorBoundary fallback (or the default chx-error-boundary UI) instead of
+// taking down the page.
+// ---------------------------------------------------------------------------
+#universal BadComponent(props) {
+    useErrorBoundary(() => <p data-testid="error-fallback" role="alert">Fallback shown</p>)
+    var boom = () => { throw new Error("bad component"); }
+    boom()
+    return <p>never rendered</p>
+}
+
+#universal BadComponentDefault(props) {
+    var boom = () => { throw new Error("bad component"); }
+    boom()
+    return <p>never rendered</p>
+}
+
+#universal ErrorBoundaryFixture(props) {
+    state show = false
+    state showDefault = false
+    return <div data-testid="error-fixture">
+        <Button data-testid="error-mount" onClick={() => show = true}>Mount broken</Button>
+        <Button data-testid="error-default-mount" variant="ghost" onClick={() => showDefault = true}>Mount default fallback</Button>
+        {show ? <BadComponent /> : null}
+        {showDefault ? <BadComponentDefault /> : null}
+    </div>
+}
+
 public func main() : int {
     var page = HtmlPage()
     page.appendTitle("Components E2E")
@@ -188,6 +236,8 @@ public func main() : int {
             <ToastFixture />
             <CollapsibleFixture />
             <SheetFixture />
+            <DropdownFixture />
+            <ErrorBoundaryFixture />
         </main>
     }
 

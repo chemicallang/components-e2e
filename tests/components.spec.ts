@@ -30,7 +30,7 @@ test("accordion item opens and closes", async ({ page }) => {
   const fixture = page.getByTestId("accordion-fixture");
 
   const summary = fixture.getByRole("button", { name: /What is Chemical/ });
-  const content = fixture.locator(".chx-accordion-panel");
+  const content = fixture.getByTestId("acc-item-0").locator(".chx-accordion-panel");
 
   await expect(content).toBeHidden();
   await summary.click();
@@ -38,6 +38,30 @@ test("accordion item opens and closes", async ({ page }) => {
   await expect(content).toContainText("A programming language.");
   await summary.click();
   await expect(content).toBeHidden();
+});
+
+test("accordion arrow keys move between items", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("accordion-fixture");
+
+  const first = fixture.getByRole("button", { name: /What is Chemical/ });
+  const second = fixture.getByRole("button", { name: /Is it fast/ });
+  const third = fixture.getByRole("button", { name: /Who uses it/ });
+
+  // ArrowDown moves to the next item.
+  await first.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(second).toBeFocused();
+
+  // ArrowUp wraps back to the previous.
+  await page.keyboard.press("ArrowUp");
+  await expect(first).toBeFocused();
+
+  // End jumps to the last item, Home to the first.
+  await page.keyboard.press("End");
+  await expect(third).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(first).toBeFocused();
 });
 
 // ---------------------------------------------------------------------------
@@ -365,4 +389,92 @@ test("select menu escapes a transform container via portal", async ({ page }) =>
 
   await listbox.getByRole("option", { name: "Gamma" }).click();
   await expect(fixture.getByTestId("portal-value")).toHaveText("Chosen: Gamma");
+});
+
+// ---------------------------------------------------------------------------
+// Tabs keyboard navigation (roving tabindex)
+// ---------------------------------------------------------------------------
+test("tabs arrow keys move selection and focus", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("tabs-fixture");
+
+  const alpha = fixture.getByRole("tab", { name: "Alpha" });
+  const beta = fixture.getByRole("tab", { name: "Beta" });
+  const gamma = fixture.getByRole("tab", { name: "Gamma" });
+
+  // Only the active tab is in the tab order.
+  await expect(alpha).toHaveAttribute("tabindex", "0");
+  await expect(beta).toHaveAttribute("tabindex", "-1");
+
+  // ArrowRight moves focus + selection to Beta.
+  await alpha.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect(beta).toBeFocused();
+  await expect(fixture.getByRole("tabpanel", { name: "Beta" })).toBeVisible();
+  await expect(alpha).toHaveAttribute("tabindex", "-1");
+  await expect(beta).toHaveAttribute("tabindex", "0");
+
+  // ArrowRight wraps to the first tab.
+  await page.keyboard.press("ArrowRight");
+  await expect(gamma).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(alpha).toBeFocused();
+
+  // ArrowLeft moves back.
+  await page.keyboard.press("ArrowLeft");
+  await expect(gamma).toBeFocused();
+
+  // Home/End jump to the ends.
+  await page.keyboard.press("Home");
+  await expect(alpha).toBeFocused();
+  await page.keyboard.press("End");
+  await expect(gamma).toBeFocused();
+});
+
+// ---------------------------------------------------------------------------
+// Dropdown (portaled menu escapes clipping)
+// ---------------------------------------------------------------------------
+test("dropdown menu escapes an overflow:hidden container via portal", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("dropdown-fixture");
+  const trigger = fixture.getByRole("button", { name: "Actions" });
+
+  await trigger.click();
+  const menu = page.getByRole("menu");
+  await expect(menu).toBeVisible();
+  await expect(menu).toHaveCount(1);
+  const inBody = await menu.evaluate((el) => document.body.contains(el));
+  expect(inBody).toBe(true);
+
+  await menu.getByRole("menuitem", { name: "Delete" }).click();
+  await expect(menu).toBeHidden();
+});
+
+// ---------------------------------------------------------------------------
+// Error boundary
+// ---------------------------------------------------------------------------
+test("component render error shows fallback UI and the page survives", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("error-fixture");
+
+  // Mount a component that throws during render; its useErrorBoundary
+  // fallback replaces it.
+  await fixture.getByTestId("error-mount").click();
+  await expect(fixture.getByTestId("error-fallback")).toBeVisible();
+  await expect(fixture.getByTestId("error-fallback")).toHaveText("Fallback shown");
+
+  // The page keeps working (other interactive components still respond).
+  const value = page.getByTestId("counter-value");
+  await page.getByTestId("counter-increment").click();
+  await expect(value).toHaveText("Count: 1");
+});
+
+test("component render error falls back to the default error UI", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("error-fixture");
+
+  await fixture.getByTestId("error-default-mount").click();
+  const fallback = fixture.locator(".chx-error-boundary");
+  await expect(fallback).toBeVisible();
+  await expect(fallback).toHaveAttribute("role", "alert");
 });
