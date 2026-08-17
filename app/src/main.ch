@@ -70,6 +70,24 @@
 }
 
 // ---------------------------------------------------------------------------
+// Portals: Select menus must escape overflow:hidden / transform clipping
+// ---------------------------------------------------------------------------
+#universal PortalFixture(props) {
+    state value = ""
+    return <div data-testid="portal-fixture">
+        <div style="overflow:hidden;height:70px;padding:12px;border:1px solid hsl(var(--border));">
+            <p style="font-size:0.75rem;color:hsl(var(--muted-foreground));">Overflow hidden container</p>
+            <Select data-testid="portal-overflow-select" options={["One", "Two", "Three"]} value={value} onValueChange={(v) => value = v} placeholder="Overflow pick" />
+        </div>
+        <div style="transform:translateX(0);height:70px;padding:12px;margin-top:1rem;border:1px solid hsl(var(--border));">
+            <p style="font-size:0.75rem;color:hsl(var(--muted-foreground));">Transform container</p>
+            <Select data-testid="portal-transform-select" options={["Alpha", "Beta", "Gamma"]} value={value} onValueChange={(v) => value = v} placeholder="Transform pick" />
+        </div>
+        <p data-testid="portal-value">Chosen: {value ? value : "none"}</p>
+    </div>
+}
+
+// ---------------------------------------------------------------------------
 // Slider: click the track, verify aria-valuenow + keyboard
 // ---------------------------------------------------------------------------
 #universal SliderFixture(props) {
@@ -162,6 +180,7 @@ public func main() : int {
             <AccordionFixture />
             <DialogFixture />
             <SelectFixture />
+            <PortalFixture />
             <SliderFixture />
             <ToggleFixture />
             <ToggleGroupFixture />

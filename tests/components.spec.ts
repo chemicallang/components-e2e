@@ -66,15 +66,19 @@ test("dialog opens, traps focus flow, and closes", async ({ page }) => {
 test("select opens, picks an option, and reports the value", async ({ page }) => {
   await page.goto("/");
   const fixture = page.getByTestId("select-fixture");
+  const listbox = page.getByRole("listbox"); // portaled to document.body
 
   // Placeholder shown, listbox closed.
   await expect(fixture.getByTestId("select-value")).toHaveText("Chosen: none");
-  await expect(fixture.getByRole("listbox")).toBeHidden();
+  await expect(listbox).toBeHidden();
 
-  // Open and pick Banana.
+  // The menu must render into document.body (portal), not inside the fixture.
   await fixture.getByRole("button", { name: "Pick a fruit" }).click();
-  const listbox = fixture.getByRole("listbox");
   await expect(listbox).toBeVisible();
+  await expect(listbox).toBeAttached();
+  const inBody = await listbox.evaluate((el) => document.body.contains(el));
+  expect(inBody).toBe(true);
+
   await listbox.getByRole("option", { name: "Banana" }).click();
 
   // Listbox closes; trigger shows the value; parent state got the change.
@@ -289,9 +293,10 @@ test("select supports keyboard navigation and typeahead", async ({ page }) => {
   const trigger = fixture.getByRole("button", { name: "Pick a fruit" });
 
   // ArrowDown opens the listbox.
+  const listbox = page.getByRole("listbox"); // portaled to document.body
   await trigger.focus();
   await page.keyboard.press("ArrowDown");
-  await expect(fixture.getByRole("listbox")).toBeVisible();
+  await expect(listbox).toBeVisible();
 
   // aria-activedescendant points at the current value (Apple = option 0).
   await expect(trigger).toHaveAttribute("aria-expanded", "true");
@@ -304,7 +309,7 @@ test("select supports keyboard navigation and typeahead", async ({ page }) => {
   // Enter selects the highlighted option.
   await page.keyboard.press("Enter");
   await expect(fixture.getByTestId("select-value")).toHaveText("Chosen: Banana");
-  await expect(fixture.getByRole("listbox")).toBeHidden();
+  await expect(listbox).toBeHidden();
 });
 
 test("select typeahead jumps to a matching option", async ({ page }) => {
@@ -314,7 +319,7 @@ test("select typeahead jumps to a matching option", async ({ page }) => {
 
   await trigger.focus();
   await page.keyboard.press("Enter"); // open
-  await expect(fixture.getByRole("listbox")).toBeVisible();
+  await expect(page.getByRole("listbox")).toBeVisible();
 
   // Type "c" → highlight jumps to Cherry.
   await page.keyboard.type("c");
@@ -322,4 +327,42 @@ test("select typeahead jumps to a matching option", async ({ page }) => {
 
   await page.keyboard.press("Enter");
   await expect(fixture.getByTestId("select-value")).toHaveText("Chosen: Cherry");
+});
+
+// ---------------------------------------------------------------------------
+// Portals: menus must escape overflow:hidden / transform clipping
+// ---------------------------------------------------------------------------
+test("select menu escapes an overflow:hidden container via portal", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("portal-fixture");
+  const trigger = fixture.getByTestId("portal-overflow-select").getByRole("button", { name: "Overflow pick" });
+
+  await trigger.click();
+  const listbox = page.getByRole("listbox", { name: "" }).filter({ hasText: "Three" });
+  await expect(listbox).toBeVisible();
+
+  // The menu is portaled to body, so it is NOT clipped by the 70px container:
+  // its bottom edge extends past the container's bottom.
+  const box = await listbox.boundingBox();
+  const containerBox = await fixture.locator("div").first().boundingBox();
+  expect(box).not.toBeNull();
+  expect(containerBox).not.toBeNull();
+  expect(box!.y + box!.height).toBeGreaterThan(containerBox!.y + containerBox!.height);
+
+  await listbox.getByRole("option", { name: "Three" }).click();
+  await expect(fixture.getByTestId("portal-value")).toHaveText("Chosen: Three");
+});
+
+test("select menu escapes a transform container via portal", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("portal-fixture");
+  const trigger = fixture.getByTestId("portal-transform-select").getByRole("button", { name: "Transform pick" });
+
+  await trigger.click();
+  const listbox = page.getByRole("listbox").filter({ hasText: "Gamma" });
+  await expect(listbox).toBeVisible();
+  await expect(listbox).toHaveCount(1); // not duplicated by the transformed ancestor
+
+  await listbox.getByRole("option", { name: "Gamma" }).click();
+  await expect(fixture.getByTestId("portal-value")).toHaveText("Chosen: Gamma");
 });
