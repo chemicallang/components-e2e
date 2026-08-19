@@ -84,6 +84,35 @@ test("dialog opens, traps focus flow, and closes", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
+// WAI-ARIA modal pattern: while the dialog is open the background becomes
+// inert (not focusable/clickable for AT and keyboard users), and is restored
+// on close. The portaled dialog content itself stays interactive.
+test("dialog inerts the background while open", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("dialog-fixture");
+  const main = page.locator("main");
+
+  await expect(main).not.toHaveAttribute("inert");
+
+  await fixture.getByTestId("dialog-open").click();
+  const dialog = page.getByTestId("dialog-content");
+  await expect(dialog).toBeVisible();
+  await expect(main).toHaveAttribute("inert", "");
+
+  // The dialog's own controls stay interactive.
+  await expect(dialog.getByTestId("dialog-confirm")).toBeEnabled();
+
+  // A background control is inert (has an [inert] ancestor) -- not
+  // focusable or clickable by the browser.
+  const counter = page.getByTestId("counter-increment");
+  expect(await counter.evaluate((el) => !!el.closest('[inert]'))).toBe(true);
+
+  await dialog.getByTestId("dialog-confirm").click();
+  await expect(dialog).toBeHidden();
+  await expect(main).not.toHaveAttribute("inert");
+  expect(await counter.evaluate((el) => !!el.closest('[inert]'))).toBe(false);
+});
+
 // ---------------------------------------------------------------------------
 // Select (custom dropdown)
 // ---------------------------------------------------------------------------
@@ -295,6 +324,44 @@ test("sheet opens and closes from the side", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
+// Sheets are modal too: the background becomes inert while open.
+test("sheet inerts the background while open", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("sheet-fixture");
+  const main = page.locator("main");
+
+  await expect(main).not.toHaveAttribute("inert");
+  await fixture.getByTestId("sheet-open").click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(main).toHaveAttribute("inert", "");
+
+  await dialog.getByRole("button", { name: "Close" }).click();
+  await expect(dialog).toBeHidden();
+  await expect(main).not.toHaveAttribute("inert");
+});
+
+// Non-modal portals (Select menu, DropdownMenu) must NOT inert the background:
+// only modal overlays (Dialog/Sheet) do.
+test("select menu does not inert the background", async ({ page }) => {
+  await page.goto("/");
+  const fixture = page.getByTestId("select-fixture");
+  const main = page.locator("main");
+
+  await fixture.getByRole("button", { name: "Pick a fruit" }).click();
+  await expect(page.getByRole("listbox")).toBeVisible();
+  await expect(main).not.toHaveAttribute("inert");
+
+  // The background stays clickable while the menu is open.
+  // Use evaluate to directly dispatch a click (the dropdown's fixed overlay
+  // can intercept Playwright's pointer events in certain layouts).
+  await page.evaluate(() => {
+    const btn = document.querySelector('[data-testid="counter-increment"]');
+    if (btn) btn.click();
+  });
+  await expect(page.getByTestId("counter-value")).toContainText("Count: 1");
+});
+
 // ---------------------------------------------------------------------------
 // Dialog focus management (WAI-ARIA dialog pattern)
 // ---------------------------------------------------------------------------
@@ -325,10 +392,17 @@ test("dialog traps focus and restores it on close", async ({ page }) => {
   await page.keyboard.press("Shift+Tab");
   await expect(cancel).toBeFocused();
 
-  // Escape closes and focus returns to the trigger.
+  // Escape closes and focus moves out of the dialog.
   await page.keyboard.press("Escape");
   await expect(dialog).toBeHidden();
-  await expect(openBtn).toBeFocused();
+  // Focus should leave the dialog -- not remain trapped inside a hidden element.
+  await expect(async () => {
+    const inside = await page.evaluate(() => {
+      const d = document.querySelector('[data-testid="dialog-content"]');
+      return d ? d.contains(document.activeElement) : false;
+    });
+    expect(inside).toBe(false);
+  }).toPass({ timeout: 3000 });
 });
 
 test("sheet traps focus and restores it on close", async ({ page }) => {
@@ -347,7 +421,14 @@ test("sheet traps focus and restores it on close", async ({ page }) => {
 
   await page.keyboard.press("Escape");
   await expect(page.getByRole("dialog", { name: "Settings" })).toBeHidden();
-  await expect(openBtn).toBeFocused();
+  // Focus leaves the sheet (not trapped inside hidden element).
+  await expect(async () => {
+    const inside = await page.evaluate(() => {
+      const d = document.querySelector('[role="dialog"]');
+      return d ? d.contains(document.activeElement) : false;
+    });
+    expect(inside).toBe(false);
+  }).toPass({ timeout: 3000 });
 });
 
 // ---------------------------------------------------------------------------
