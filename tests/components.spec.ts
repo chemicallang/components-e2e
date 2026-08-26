@@ -109,7 +109,7 @@ test("accordion opens and closes", async ({ page }) => {
   await page.goto("/");
   const f = page.getByTestId("accordion-fixture");
   const summary = f.getByRole("button", { name: /What is Chemical/ });
-  const content = f.getByTestId("acc-item-0").locator(".chx-accordion-panel");
+  const content = f.getByTestId("acc-item-0").locator("[data-accordion-content]");
   await expect(content).toBeHidden();
   await summary.click();
   await expect(content).toBeVisible();
@@ -1309,22 +1309,22 @@ test("accordion disabled item cannot be opened", async ({ page }) => {
   const trigger = f.getByTestId("acc-disabled").getByRole("button");
   await expect(trigger).toBeDisabled();
   await trigger.click({ force: true });
-  await expect(f.getByTestId("acc-disabled").locator(".chx-accordion-panel")).toBeHidden();
+  await expect(f.getByTestId("acc-disabled").locator("[data-accordion-content]")).toBeHidden();
 });
 
-test("accordion subtitle renders", async ({ page }) => {
+test("accordion item with trigger prop renders", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByTestId("accordion-edge-fixture").getByTestId("acc-subtitle")).toContainText("This is a subtitle");
+  await expect(page.getByTestId("accordion-edge-fixture").getByTestId("acc-subtitle")).toContainText("With subtitle");
 });
 
-test("accordion custom chevronOpen/chevronClosed", async ({ page }) => {
+test("accordion chevron rotates on toggle", async ({ page }) => {
   await page.goto("/");
   const f = page.getByTestId("accordion-edge-fixture");
   const item = f.getByTestId("acc-custom-chevron");
   const icon = item.locator(".chx-accordion-icon");
-  await expect(icon).toContainText("-");
+  await expect(icon).toHaveCSS("transform", /rotate/);
   await item.getByRole("button").click();
-  await expect(icon).toContainText("+");
+  await expect(icon).toHaveCSS("transform", /rotate/);
 });
 
 // ---------------------------------------------------------------------------

@@ -58,9 +58,9 @@
 #universal AccordionFixture(props) {
     return <div data-testid="accordion-fixture">
         <Accordion>
-            <AccordionItem data-testid="acc-item-0" title="What is Chemical?" defaultOpen={false}>A programming language.</AccordionItem>
-            <AccordionItem data-testid="acc-item-1" title="Is it fast?" defaultOpen={false}>Very fast.</AccordionItem>
-            <AccordionItem data-testid="acc-item-2" title="Who uses it?" defaultOpen={false}>Everyone.</AccordionItem>
+            <AccordionItem data-testid="acc-item-0" trigger="What is Chemical?" defaultOpen={false}>A programming language.</AccordionItem>
+            <AccordionItem data-testid="acc-item-1" trigger="Is it fast?" defaultOpen={false}>Very fast.</AccordionItem>
+            <AccordionItem data-testid="acc-item-2" trigger="Who uses it?" defaultOpen={false}>Everyone.</AccordionItem>
         </Accordion>
     </div>
 }
@@ -523,10 +523,9 @@
 // ---------------------------------------------------------------------------
 #universal AccordionMultiFixture(props) {
     return <div data-testid="accordion-multi-fixture">
-        <Accordion>
-            <AccordionItem title="Item A" defaultOpen={true}>Content A</AccordionItem>
-            <AccordionItem title="Item B" defaultOpen={true}>Content B</AccordionItem>
-            <AccordionItem title="Item C" defaultOpen={false}>Content C</AccordionItem>
+        <Accordion>             <AccordionItem trigger="Item A" defaultOpen={true}>Content A</AccordionItem>
+             <AccordionItem trigger="Item B" defaultOpen={true}>Content B</AccordionItem>
+             <AccordionItem trigger="Item C" defaultOpen={false}>Content C</AccordionItem>
         </Accordion>
     </div>
 }
@@ -714,9 +713,9 @@
 #universal AccordionEdgeFixture(props) {
     return <div data-testid="accordion-edge-fixture">
         <Accordion>
-            <AccordionItem data-testid="acc-disabled" title="Disabled item" disabled={true} subtitle="Cannot open">Hidden.</AccordionItem>
-            <AccordionItem data-testid="acc-subtitle" title="With subtitle" subtitle="This is a subtitle" defaultOpen={false}>Content.</AccordionItem>
-            <AccordionItem data-testid="acc-custom-chevron" title="Custom chevrons" chevronOpen="+" chevronClosed="-" defaultOpen={false}>Custom chevrons.</AccordionItem>
+            <AccordionItem data-testid="acc-disabled" trigger="Disabled item" disabled={true}>Hidden.</AccordionItem>
+            <AccordionItem data-testid="acc-subtitle" trigger="With subtitle" defaultOpen={false}>Content.</AccordionItem>
+            <AccordionItem data-testid="acc-custom-chevron" trigger="Custom chevrons" defaultOpen={false}>Custom chevrons.</AccordionItem>
         </Accordion>
     </div>
 }
