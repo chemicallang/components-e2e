@@ -301,6 +301,44 @@ test.describe.serial("Runtime", () => {
   });
 
   // ===========================================================================
+  // Derived reactive lists (reactive reads inside callbacks)
+  // ===========================================================================
+
+  test("derived list: filtered array recomputes reactively", async () => {
+    await page.goto("/");
+    const f = page.getByTestId("derived-list-probe");
+    await expect(f.getByTestId("probe-count")).toHaveText("3");
+    await f.getByTestId("probe-input").fill("an");
+    await expect(f.getByTestId("probe-count")).toHaveText("1");
+    await expect(f.getByTestId("probe-Banana")).toBeVisible();
+    await expect(f.getByTestId("probe-Apple")).toHaveCount(0);
+    await f.getByTestId("probe-input").fill("");
+    await expect(f.getByTestId("probe-count")).toHaveText("3");
+  });
+
+  test("derived list: SSR renders the unfiltered initial value", async () => {
+    const ctx = await page.context().browser()!.newContext();
+    const p = await ctx.newPage();
+    await p.goto("/");
+    const f = p.getByTestId("derived-list-probe");
+    await expect(f.getByTestId("probe-count")).toHaveText("3");
+    await expect(f.getByTestId("probe-Apple")).toBeVisible();
+    await ctx.close();
+  });
+
+  test("derived list from props: parent state updates propagate", async () => {
+    await page.goto("/");
+    const f = page.getByTestId("props-derived-fixture");
+    const items = f.locator('li[data-testid^="pdl-"]');
+    await expect(items).toHaveCount(2);
+    await f.getByTestId("pdl-input").fill("an");
+    await expect(items).toHaveCount(1);
+    await f.getByTestId("pdl-input").fill("");
+    await f.getByTestId("pdl-add").click();
+    await expect(items).toHaveCount(3);
+  });
+
+  // ===========================================================================
   // Keyed list reconciliation tests
   // ===========================================================================
 

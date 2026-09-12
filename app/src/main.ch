@@ -1069,6 +1069,39 @@
     </div>
 }
 
+// Probe: derived (filtered) list recomputed from state. This is the mechanism
+// DataTable/Combobox/forms need: a reactive derived array.
+#universal DerivedListProbe(props) {
+    state query = ""
+    var items = ["Apple", "Banana", "Cherry"]
+    var filtered = items.filter((it) => it.toLowerCase().includes(query.toLowerCase()))
+    return <div data-testid="derived-list-probe">
+        <input data-testid="probe-input" value={query} onInput={(e) => query = e.target.value} />
+        <ul data-testid="probe-list">
+            {filtered.map((it) => <li data-testid={"probe-" + it}>{it}</li>)}
+        </ul>
+        <p data-testid="probe-count">{filtered.length}</p>
+    </div>
+}
+
+// Probe: derived array from PROPS (parent passes state signals).
+#universal PropsDerivedChild(props) {
+    var filtered = props.items.filter((it) => it.text.includes(props.query))
+    return <ul data-testid="props-derived-list">
+        {filtered.map((it) => <li data-testid={"pdl-" + it.id}>{it.text}</li>)}
+    </ul>
+}
+
+#universal PropsDerivedFixture(props) {
+    state query = ""
+    state items = [{id: "a", text: "Apple"}, {id: "b", text: "Banana"}]
+    return <div data-testid="props-derived-fixture">
+        <PropsDerivedChild items={items} query={query} />
+        <input data-testid="pdl-input" value={query} onInput={(e) => query = e.target.value} />
+        <button data-testid="pdl-add" onClick={() => items = [...items, {id: "c", text: "Cherry"}]}>add</button>
+    </div>
+}
+
 #universal KeyedListFixture(props) {
     state items = [{id: "a", label: "Alpha"}, {id: "b", label: "Beta"}, {id: "c", label: "Gamma"}]
     return <div data-testid="keyed-list-fixture">
@@ -1251,6 +1284,8 @@ public func main() : int {
             <BatchingFixture />
             <UnmountCleanupFixture />
             <EffectDepsFixture />
+            <DerivedListProbe />
+            <PropsDerivedFixture />
             <KeyedListFixture />
             <ErrorBoundaryChildFixture />
             <MemoFixture />
