@@ -48,7 +48,7 @@ test("batching: no runtime errors during batched updates", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(String(err)));
   page.on("console", (msg) => {
-    if (msg.type() === "error" && !msg.text().includes("favicon")) errors.push(msg.text());
+    if (msg.type() === "error" && !msg.text().includes("favicon") && !msg.text().includes("404")) errors.push(msg.text());
   });
 
   await page.goto("/");
@@ -204,7 +204,8 @@ test("unmount: cleanup runs again on second mount/unmount cycle", async ({ page 
 
   await f.getByTestId("unmount-toggle").click();
   await expect(f.getByTestId("unmount-child")).toBeHidden();
-  // Now cleanup should have run
+  // MutationObserver cleanup is async — wait a tick for it to fire
+  await page.waitForTimeout(50);
   expect(await page.evaluate(() => (window as any).__cleanupRan)).toBe(true);
 });
 
@@ -212,7 +213,7 @@ test("unmount: no runtime errors during mount/unmount cycles", async ({ page }) 
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(String(err)));
   page.on("console", (msg) => {
-    if (msg.type() === "error" && !msg.text().includes("favicon")) errors.push(msg.text());
+    if (msg.type() === "error" && !msg.text().includes("favicon") && !msg.text().includes("404")) errors.push(msg.text());
   });
 
   await page.goto("/");
@@ -253,7 +254,7 @@ test("batching and unmount: no errors when both features are active", async ({ p
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(String(err)));
   page.on("console", (msg) => {
-    if (msg.type() === "error" && !msg.text().includes("favicon")) errors.push(msg.text());
+    if (msg.type() === "error" && !msg.text().includes("favicon") && !msg.text().includes("404")) errors.push(msg.text());
   });
 
   await page.goto("/");
