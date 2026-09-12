@@ -1089,6 +1089,62 @@
     return <span>should not render</span>
 }
 
+// ---------------------------------------------------------------------------
+// Memoization: useMemo, useCallback, $__uni_memo
+// ---------------------------------------------------------------------------
+#universal MemoExpensiveComp(props) {
+    state renders = 0
+    renders = renders + 1
+    return <div data-testid="memo-expensive-renders">{renders}</div>
+}
+
+#universal MemoFixture(props) {
+    state counter = 0
+    state label = "hello"
+    let renderCount = 0
+    let rerenderCount = 0
+    return <div data-testid="memo-fixture">
+        <div data-testid="memo-counter">{counter}</div>
+        <div data-testid="memo-label">{label}</div>
+        <MemoExpensiveComp data-testid="memo-nocache" label={label} />
+        <button data-testid="memo-inc" onClick={() => counter = counter + 1}>inc</button>
+        <button data-testid="memo-changelabel" onClick={() => label = label + "!"}>change</button>
+    </div>
+}
+
+// ---------------------------------------------------------------------------
+// SVG namespace: elements render in SVG namespace
+// ---------------------------------------------------------------------------
+#universal SvgFixture(props) {
+    return <div data-testid="svg-fixture">
+        <svg data-testid="svg-root" width="100" height="100" viewBox="0 0 100 100">
+            <circle data-testid="svg-circle" cx="50" cy="50" r="40" fill="red" />
+            <rect data-testid="svg-rect" x="10" y="10" width="30" height="30" fill="blue" />
+        </svg>
+        <p data-testid="svg-text">SVG above</p>
+    </div>
+}
+
+// ---------------------------------------------------------------------------
+// Ref forwarding: ref prop forwarded to root DOM element
+// ---------------------------------------------------------------------------
+#universal RefChildComp(props) {
+    return <div data-testid="ref-child-root">child content</div>
+}
+
+#universal RefForwardingFixture(props) {
+    state capturedTag = "none"
+    state capturedTestId = "none"
+    return <div data-testid="ref-fixture">
+        <RefChildComp data-testid="ref-target" ref={(el) => {
+            capturedTag = el ? el.tagName.toLowerCase() : "null"
+            capturedTestId = el ? el.getAttribute("data-testid") : "null"
+        }} />
+        <div data-testid="ref-captured-tag">{capturedTag}</div>
+        <div data-testid="ref-captured-testid">{capturedTestId}</div>
+    </div>
+}
+
 public func main() : int {
     var page = HtmlPage()
     page.appendTitle("Components E2E")
@@ -1176,6 +1232,9 @@ public func main() : int {
             <UnmountCleanupFixture />
             <KeyedListFixture />
             <ErrorBoundaryChildFixture />
+            <MemoFixture />
+            <SvgFixture />
+            <RefForwardingFixture />
         </main>
     }
 

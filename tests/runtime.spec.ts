@@ -373,3 +373,79 @@ test.describe("error boundary hierarchy", () => {
     await expect(eb.getByTestId("eb-parent-sibling")).toHaveText(" sibling content");
   });
 });
+
+test.describe("memoization", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForTimeout(200);
+  });
+
+  test("useMemo renders initial value", async ({ page }) => {
+    const m = page.getByTestId("memo-fixture");
+    await expect(m.getByTestId("memo-label")).toHaveText("hello");
+  });
+
+  test("useMemo state persists across non-relevant renders", async ({ page }) => {
+    const m = page.getByTestId("memo-fixture");
+    await m.getByTestId("memo-inc").click();
+    await m.getByTestId("memo-inc").click();
+    await expect(m.getByTestId("memo-counter")).toHaveText("2");
+    // label unchanged — component should not re-render
+    await expect(m.getByTestId("memo-label")).toHaveText("hello");
+  });
+
+  test("useMemo updates when deps change", async ({ page }) => {
+    const m = page.getByTestId("memo-fixture");
+    await m.getByTestId("memo-changelabel").click();
+    await expect(m.getByTestId("memo-label")).toHaveText("hello!");
+  });
+});
+
+test.describe("SVG namespace", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForTimeout(200);
+  });
+
+  test("SVG root renders", async ({ page }) => {
+    const svg = page.getByTestId("svg-root");
+    await expect(svg).toBeVisible();
+    await expect(svg).toHaveAttribute("viewBox", "0 0 100 100");
+  });
+
+  test("SVG circle renders inside SVG namespace", async ({ page }) => {
+    const circle = page.getByTestId("svg-circle");
+    await expect(circle).toBeVisible();
+    await expect(circle).toHaveAttribute("cx", "50");
+    await expect(circle).toHaveAttribute("r", "40");
+  });
+
+  test("SVG rect renders", async ({ page }) => {
+    const rect = page.getByTestId("svg-rect");
+    await expect(rect).toBeVisible();
+    await expect(rect).toHaveAttribute("width", "30");
+  });
+
+  test("SVG text sibling is visible", async ({ page }) => {
+    await expect(page.getByTestId("svg-text")).toHaveText("SVG above");
+  });
+});
+
+test.describe("ref forwarding", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForTimeout(200);
+  });
+
+  test("ref callback receives the root DOM element", async ({ page }) => {
+    await expect(page.getByTestId("ref-captured-tag")).toHaveText("div");
+  });
+
+  test("ref callback receives the correct data-testid", async ({ page }) => {
+    await expect(page.getByTestId("ref-captured-testid")).toHaveText("ref-child-root");
+  });
+
+  test("child content renders normally", async ({ page }) => {
+    await expect(page.getByTestId("ref-child-root")).toHaveText("child content");
+  });
+});
