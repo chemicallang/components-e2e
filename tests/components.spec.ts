@@ -1336,9 +1336,10 @@ test("accordion chevron rotates on toggle", async () => {
   const f = page.getByTestId("accordion-edge-fixture");
   const item = f.getByTestId("acc-custom-chevron");
   const icon = item.locator(".chx-accordion-icon");
-  await expect(icon).toHaveCSS("transform", /rotate/);
+  // Computed transform is always a matrix, so assert the actual rotation.
+  await expect(icon).toHaveCSS("transform", "matrix(1, 0, 0, 1, 0, 0)");
   await item.getByRole("button").click();
-  await expect(icon).toHaveCSS("transform", /rotate/);
+  await expect(icon).toHaveCSS("transform", "matrix(-1, 0, 0, -1, 0, 0)");
 });
 
 // ---------------------------------------------------------------------------
@@ -1535,15 +1536,16 @@ test("kbd renders keyboard shortcuts", async () => {
 test("skeleton renders with sizes and circle", async () => {
   await page.goto("/");
   const f = page.getByTestId("skeleton-fixture");
-  // Skeleton doesn't forward data-testid; find span children
-  const spans = f.locator("span");
-  await expect(spans).toHaveCount(3);
-  const rect = spans.nth(0);
+  const rect = f.getByTestId("skeleton-rect");
+  const circle = f.getByTestId("skeleton-circle");
+  const def = f.getByTestId("skeleton-default");
+  await expect(rect).toBeVisible();
+  await expect(circle).toBeVisible();
+  await expect(def).toBeAttached();
   const rectBox = await rect.boundingBox();
   expect(rectBox).not.toBeNull();
   expect(rectBox!.width).toBeGreaterThan(100);
   // Circle should have equal width/height
-  const circle = spans.nth(1);
   const circleBox = await circle.boundingBox();
   expect(circleBox).not.toBeNull();
   expect(Math.abs(circleBox!.width - circleBox!.height)).toBeLessThan(2);
