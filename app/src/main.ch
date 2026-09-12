@@ -1008,6 +1008,50 @@
     </div>
 }
 
+// ===========================================================================
+// RUNTIME FIXTURES: Batching & Unmount Cleanup
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// Batching: multiple state updates in a single event handler must be
+// coalesced into one synchronous re-render (via automatic batching).
+// ---------------------------------------------------------------------------
+#universal BatchingFixture(props) {
+    state a = 0
+    state b = 0
+    state c = 0
+    state renderCount = 0
+    useLayoutEffect(() => { renderCount = renderCount + 1 })
+    return <div data-testid="batching-fixture">
+        <p data-testid="batch-a">{a}</p>
+        <p data-testid="batch-b">{b}</p>
+        <p data-testid="batch-c">{c}</p>
+        <p data-testid="batch-renders">{renderCount}</p>
+        <Button data-testid="batch-update" onClick={() => { a = 10; b = 20; c = 30 }}>Update All</Button>
+    </div>
+}
+
+// ---------------------------------------------------------------------------
+// Unmount cleanup: when a child component is removed from the DOM, its
+// useEffect cleanup functions must run (owner tree disposal).
+// ---------------------------------------------------------------------------
+#universal UnmountChild(props) {
+    useEffect(() => {
+        window.__childMounted = true
+        return () => { window.__cleanupRan = true }
+    }, [])
+    return <div data-testid="unmount-child">Child visible</div>
+}
+
+#universal UnmountCleanupFixture(props) {
+    state show = true
+    return <div data-testid="unmount-fixture">
+        <Button data-testid="unmount-toggle" onClick={() => show = !show}>{show ? "Hide" : "Show"}</Button>
+        <p data-testid="unmount-showing">{show ? "yes" : "no"}</p>
+        {show ? <UnmountChild /> : null}
+    </div>
+}
+
 public func main() : int {
     var page = HtmlPage()
     page.appendTitle("Components E2E")
@@ -1091,6 +1135,8 @@ public func main() : int {
             <ToggleGroupVariantsFixture />
             <TextPolymorphicFixture />
             <DarkModeFixture />
+            <BatchingFixture />
+            <UnmountCleanupFixture />
         </main>
     }
 
