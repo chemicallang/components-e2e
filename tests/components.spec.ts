@@ -1281,17 +1281,16 @@ test("collapsible toggle works", async () => {
 // ---------------------------------------------------------------------------
 test("dialog controlled: state tracks open/close", async () => {
   await page.goto("/");
-  // Hydration duplicates <p> elements; use page-level selectors
+  // The controlled-state <p> is adopted in place during hydration (no duplicate).
   const state = page.locator('[data-testid="dialog-edge-state"]');
-  // After hydration, the reactive <p> shows the correct state
-  await expect(state.nth(1)).toHaveText("closed");
+  await expect(state).toHaveText("closed");
   await page.getByTestId("dialog-edge-open").click();
   // Dialog content is portaled to body
   await expect(page.getByTestId("dialog-edge-content")).toBeVisible();
-  await expect(state.nth(1)).toHaveText("open");
+  await expect(state).toHaveText("open");
   await page.getByTestId("dialog-edge-close").click();
   await expect(page.getByTestId("dialog-edge-content")).toBeHidden();
-  await expect(state.nth(1)).toHaveText("closed");
+  await expect(state).toHaveText("closed");
 });
 
 test("dialog aria-label renders on dialog role", async () => {

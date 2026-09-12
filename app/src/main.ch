@@ -1198,6 +1198,27 @@
     </div>
 }
 
+// ---------------------------------------------------------------------------
+// Nested component root shapes: a fragment (multi-node) root. Exercises
+// hydration adoption when a nested component does not render one root element.
+// ---------------------------------------------------------------------------
+#universal FragmentRootComp(props) {
+    return <>
+        <span data-testid="frag-one">one</span>
+        <span data-testid="frag-two">two</span>
+    </>
+}
+
+#universal RootShapesFixture(props) {
+    state showFrag = false
+    return <div data-testid="root-shapes-fixture">
+        <FragmentRootComp />
+        <span data-testid="root-shapes-next">next</span>
+        <Button data-testid="root-shapes-toggle" onClick={() => showFrag = true}>show</Button>
+        {showFrag ? <FragmentRootComp /> : null}
+    </div>
+}
+
 public func main() : int {
     var page = HtmlPage()
     page.appendTitle("Components E2E")
@@ -1291,6 +1312,7 @@ public func main() : int {
             <MemoFixture />
             <SvgFixture />
             <RefForwardingFixture />
+            <RootShapesFixture />
         </main>
     }
 
