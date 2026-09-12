@@ -1,4 +1,16 @@
 import { test, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
+
+let page: Page;
+
+test.describe.serial("Reactivity", () => {
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
+  });
+
+  test.afterAll(async () => {
+    if (page) await page.close();
+  });
 
 // ===========================================================================
 // PROP CHANGE REACTIVITY
@@ -11,7 +23,7 @@ import { test, expect } from "@playwright/test";
 // ---------------------------------------------------------------------------
 // Counter: prop-driven reset
 // ---------------------------------------------------------------------------
-test("counter state persists across multiple rapid clicks", async ({ page }) => {
+test("counter state persists across multiple rapid clicks", async () => {
   await page.goto("/");
   const btn = page.getByTestId("counter-increment");
   const value = page.getByTestId("counter-value");
@@ -24,7 +36,7 @@ test("counter state persists across multiple rapid clicks", async ({ page }) => 
   await expect(value).toHaveText("Count: 20");
 });
 
-test("counter reset works after many increments", async ({ page }) => {
+test("counter reset works after many increments", async () => {
   await page.goto("/");
   const btn = page.getByTestId("counter-increment");
   const reset = page.getByTestId("counter-reset");
@@ -48,7 +60,7 @@ test("counter reset works after many increments", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Button: variant and prop changes
 // ---------------------------------------------------------------------------
-test("button variant attribute is set correctly at SSR", async ({ page }) => {
+test("button variant attribute is set correctly at SSR", async () => {
   await page.goto("/");
   const f = page.getByTestId("button-fixture");
 
@@ -58,7 +70,7 @@ test("button variant attribute is set correctly at SSR", async ({ page }) => {
   }
 });
 
-test("button disabled state prevents click handler", async ({ page }) => {
+test("button disabled state prevents click handler", async () => {
   await page.goto("/");
   const f = page.getByTestId("button-edge-fixture");
   const btn = f.getByTestId("btn-disabled-interactive");
@@ -72,7 +84,7 @@ test("button disabled state prevents click handler", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Tabs: prop-driven content
 // ---------------------------------------------------------------------------
-test("tabs SSR renders correct initial panel", async ({ page }) => {
+test("tabs SSR renders correct initial panel", async () => {
   await page.goto("/");
   const f = page.getByTestId("tabs-fixture");
 
@@ -82,7 +94,7 @@ test("tabs SSR renders correct initial panel", async ({ page }) => {
   await expect(f.getByRole("tabpanel", { name: "Gamma" })).toBeHidden();
 });
 
-test("tabs clicking same tab twice does not crash", async ({ page }) => {
+test("tabs clicking same tab twice does not crash", async () => {
   await page.goto("/");
   const f = page.getByTestId("tabs-fixture");
   const alpha = f.getByRole("tab", { name: "Alpha" });
@@ -96,7 +108,7 @@ test("tabs clicking same tab twice does not crash", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Accordion: prop changes
 // ---------------------------------------------------------------------------
-test("accordion single item open/close cycle", async ({ page }) => {
+test("accordion single item open/close cycle", async () => {
   await page.goto("/");
   const f = page.getByTestId("accordion-fixture");
   const trigger = f.getByRole("button", { name: /What is Chemical/ });
@@ -121,7 +133,7 @@ test("accordion single item open/close cycle", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Dialog: prop-driven open/close
 // ---------------------------------------------------------------------------
-test("dialog multiple open/close cycles", async ({ page }) => {
+test("dialog multiple open/close cycles", async () => {
   await page.goto("/");
   const f = page.getByTestId("dialog-fixture");
   const openBtn = f.getByTestId("dialog-open");
@@ -148,7 +160,7 @@ test("dialog multiple open/close cycles", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Select: value changes
 // ---------------------------------------------------------------------------
-test("select changing value updates display", async ({ page }) => {
+test("select changing value updates display", async () => {
   await page.goto("/");
   const f = page.getByTestId("select-fixture");
   const trigger = f.getByRole("button", { name: "Pick a fruit" });
@@ -172,7 +184,7 @@ test("select changing value updates display", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // ToggleGroup: value changes
 // ---------------------------------------------------------------------------
-test("toggle group single mode rapid clicks", async ({ page }) => {
+test("toggle group single mode rapid clicks", async () => {
   await page.goto("/");
   const f = page.getByTestId("togglegroup-fixture");
   const bold = f.getByRole("button", { name: "Bold" });
@@ -194,7 +206,7 @@ test("toggle group single mode rapid clicks", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // RadioGroup: value changes
 // ---------------------------------------------------------------------------
-test("radio group changing selection updates value", async ({ page }) => {
+test("radio group changing selection updates value", async () => {
   await page.goto("/");
   const f = page.getByTestId("radiogroup-fixture");
   const small = f.getByRole("radio", { name: "Small" });
@@ -222,7 +234,7 @@ test("radio group changing selection updates value", async ({ page }) => {
 // interaction sequences.
 // ===========================================================================
 
-test("counter state survives dialog open/close", async ({ page }) => {
+test("counter state survives dialog open/close", async () => {
   await page.goto("/");
 
   // Increment counter
@@ -240,7 +252,7 @@ test("counter state survives dialog open/close", async ({ page }) => {
   await expect(page.getByTestId("counter-value")).toHaveText("Count: 2");
 });
 
-test("select value persists through accordion toggle", async ({ page }) => {
+test("select value persists through accordion toggle", async () => {
   await page.goto("/");
 
   // Select a fruit
@@ -262,14 +274,14 @@ test("select value persists through accordion toggle", async ({ page }) => {
 // Tests for boundary conditions, empty states, and special characters.
 // ===========================================================================
 
-test("button with empty text renders", async ({ page }) => {
+test("button with empty text renders", async () => {
   await page.goto("/");
   // The icon button has minimal text
   const icon = page.getByTestId("button-fixture").getByTestId("btn-icon");
   await expect(icon).toBeVisible();
 });
 
-test("select with empty options does not crash", async ({ page }) => {
+test("select with empty options does not crash", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("select-edge-fixture")
     .locator("[data-testid=select-empty]").getByRole("button");
@@ -282,7 +294,7 @@ test("select with empty options does not crash", async ({ page }) => {
   await expect(listbox).toBeHidden();
 });
 
-test("dialog with long content scrolls", async ({ page }) => {
+test("dialog with long content scrolls", async () => {
   await page.goto("/");
   await page.getByTestId("dialog-fixture").getByTestId("dialog-open").click();
   await expect(page.getByTestId("dialog-content")).toBeVisible();
@@ -291,7 +303,7 @@ test("dialog with long content scrolls", async ({ page }) => {
   await expect(dialog).toBeVisible();
 });
 
-test("accordion with defaultOpen renders open", async ({ page }) => {
+test("accordion with defaultOpen renders open", async () => {
   await page.goto("/");
   // Check that accordion items with defaultOpen={true} are open on SSR
   const f = page.getByTestId("accordion-fixture");
@@ -307,7 +319,7 @@ test("accordion with defaultOpen renders open", async ({ page }) => {
 // reactive system thoroughly.
 // ===========================================================================
 
-test("counter increment then dialog then counter persists", async ({ page }) => {
+test("counter increment then dialog then counter persists", async () => {
   await page.goto("/");
 
   // Step 1: Increment counter to 5
@@ -332,7 +344,7 @@ test("counter increment then dialog then counter persists", async ({ page }) => 
   await expect(page.getByTestId("counter-value")).toHaveText("Count: 6");
 });
 
-test("tabs then select then tabs persists", async ({ page }) => {
+test("tabs then select then tabs persists", async () => {
   await page.goto("/");
 
   // Switch to Beta tab
@@ -348,7 +360,7 @@ test("tabs then select then tabs persists", async ({ page }) => {
   await expect(page.getByTestId("tabs-fixture").getByRole("tabpanel", { name: "Beta" })).toBeVisible();
 });
 
-test("accordion open then dialog then accordion persists", async ({ page }) => {
+test("accordion open then dialog then accordion persists", async () => {
   await page.goto("/");
 
   // Open accordion item
@@ -373,58 +385,58 @@ test("accordion open then dialog then accordion persists", async ({ page }) => {
 // hydration. These catch SSR bugs that only show up in real browsers.
 // ===========================================================================
 
-test("SSR renders counter as 0", async ({ page }) => {
+test("SSR renders counter as 0", async () => {
   await page.goto("/");
   // Before any interaction, SSR should show Count: 0
   await expect(page.getByTestId("counter-value")).toHaveText("Count: 0");
 });
 
-test("SSR renders tabs with first panel visible", async ({ page }) => {
+test("SSR renders tabs with first panel visible", async () => {
   await page.goto("/");
   await expect(page.getByTestId("tabs-fixture").getByRole("tabpanel", { name: "Alpha" })).toBeVisible();
 });
 
-test("SSR renders accordion items closed", async ({ page }) => {
+test("SSR renders accordion items closed", async () => {
   await page.goto("/");
   const f = page.getByTestId("accordion-fixture");
   const content = f.getByTestId("acc-item-0").locator("[data-accordion-content]");
   await expect(content).toBeHidden();
 });
 
-test("SSR renders dialog as hidden", async ({ page }) => {
+test("SSR renders dialog as hidden", async () => {
   await page.goto("/");
   await expect(page.getByTestId("dialog-content")).toBeHidden();
 });
 
-test("SSR renders select as unselected", async ({ page }) => {
+test("SSR renders select as unselected", async () => {
   await page.goto("/");
   await expect(page.getByTestId("select-fixture").getByTestId("select-value")).toHaveText("Chosen: none");
 });
 
-test("SSR renders progress with correct value", async ({ page }) => {
+test("SSR renders progress with correct value", async () => {
   await page.goto("/");
   const p = page.getByTestId("progress-fixture").getByTestId("progress-default");
   await expect(p).toHaveAttribute("value", "45");
 });
 
-test("SSR renders pagination at page 1", async ({ page }) => {
+test("SSR renders pagination at page 1", async () => {
   await page.goto("/");
   await expect(page.getByTestId("pagination-fixture").getByTestId("pagination-value")).toHaveText("Page: 1");
 });
 
-test("SSR renders list with 3 items", async ({ page }) => {
+test("SSR renders list with 3 items", async () => {
   await page.goto("/");
   const items = page.getByTestId("list-fixture").getByTestId("list").locator("li");
   await expect(items).toHaveCount(3);
 });
 
-test("SSR renders table with headers", async ({ page }) => {
+test("SSR renders table with headers", async () => {
   await page.goto("/");
   const t = page.getByTestId("table-fixture").getByTestId("table");
   await expect(t.locator("th").nth(0)).toContainText("Name");
 });
 
-test("SSR renders badge variants", async ({ page }) => {
+test("SSR renders badge variants", async () => {
   await page.goto("/");
   const f = page.getByTestId("badge-fixture");
   await expect(f.locator('span[data-variant="default"]').first()).toContainText("Default");
@@ -438,14 +450,14 @@ test("SSR renders badge variants", async ({ page }) => {
 // doesn't break state or lose event handlers.
 // ===========================================================================
 
-test("hydration does not duplicate elements", async ({ page }) => {
+test("hydration does not duplicate elements", async () => {
   await page.goto("/");
   // After hydration, there should be exactly one counter value element
   const values = page.getByTestId("counter-value");
   await expect(values).toHaveCount(1);
 });
 
-test("hydration attaches click handlers", async ({ page }) => {
+test("hydration attaches click handlers", async () => {
   await page.goto("/");
   const value = page.getByTestId("counter-value");
   await expect(value).toHaveText("Count: 0");
@@ -455,13 +467,13 @@ test("hydration attaches click handlers", async ({ page }) => {
   await expect(value).toHaveText("Count: 1");
 });
 
-test("hydration preserves SSR text", async ({ page }) => {
+test("hydration preserves SSR text", async () => {
   await page.goto("/");
   // SSR renders "Count: 0", hydration should preserve this
   await expect(page.getByTestId("counter-value")).toHaveText("Count: 0");
 });
 
-test("hydration does not flash unstyled content", async ({ page }) => {
+test("hydration does not flash unstyled content", async () => {
   await page.goto("/");
   // All fixtures should be present immediately (SSR)
   const fixtures = [
@@ -479,7 +491,7 @@ test("hydration does not flash unstyled content", async ({ page }) => {
 // Tests for ARIA attributes, keyboard navigation, and screen reader support.
 // ===========================================================================
 
-test("dialog has correct aria attributes", async ({ page }) => {
+test("dialog has correct aria attributes", async () => {
   await page.goto("/");
   await page.getByTestId("dialog-fixture").getByTestId("dialog-open").click();
   const dialog = page.locator("[role='dialog'][aria-modal='true']:visible").first();
@@ -487,7 +499,7 @@ test("dialog has correct aria attributes", async ({ page }) => {
   await expect(dialog).toHaveAttribute("aria-modal", "true");
 });
 
-test("tabs have correct aria roles", async ({ page }) => {
+test("tabs have correct aria roles", async () => {
   await page.goto("/");
   const f = page.getByTestId("tabs-fixture");
   const tabs = f.locator("[role='tab']");
@@ -496,7 +508,7 @@ test("tabs have correct aria roles", async ({ page }) => {
   expect(await panels.count()).toBeGreaterThanOrEqual(3);
 });
 
-test("accordion triggers have aria-expanded", async ({ page }) => {
+test("accordion triggers have aria-expanded", async () => {
   await page.goto("/");
   const f = page.getByTestId("accordion-fixture");
   const triggers = f.locator("button[aria-expanded]");
@@ -507,7 +519,7 @@ test("accordion triggers have aria-expanded", async ({ page }) => {
   }
 });
 
-test("collapsible has aria-expanded and toggles", async ({ page }) => {
+test("collapsible has aria-expanded and toggles", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("collapsible-fixture").getByRole("button", { name: /More info/ });
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -517,7 +529,7 @@ test("collapsible has aria-expanded and toggles", async ({ page }) => {
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
 
-test("slider has correct aria attributes", async ({ page }) => {
+test("slider has correct aria attributes", async () => {
   await page.goto("/");
   const slider = page.getByTestId("slider-fixture").getByRole("slider", { name: "Volume" });
   await expect(slider).toHaveAttribute("aria-valuemin", "0");
@@ -525,13 +537,13 @@ test("slider has correct aria attributes", async ({ page }) => {
   await expect(slider).toHaveAttribute("aria-valuenow", "30");
 });
 
-test("radio group has radiogroup role", async ({ page }) => {
+test("radio group has radiogroup role", async () => {
   await page.goto("/");
   const group = page.getByTestId("radiogroup-fixture").locator("[role='radiogroup']");
   await expect(group).toBeVisible();
 });
 
-test("toggle group has correct aria-pressed defaults", async ({ page }) => {
+test("toggle group has correct aria-pressed defaults", async () => {
   await page.goto("/");
   const f = page.getByTestId("togglegroup-fixture");
   await expect(f.getByRole("button", { name: "Bold" })).toHaveAttribute("aria-pressed", "true");
@@ -544,7 +556,7 @@ test("toggle group has correct aria-pressed defaults", async ({ page }) => {
 // Tests that verify the system handles rapid interactions without crashes.
 // ===========================================================================
 
-test("rapid counter clicks do not lose state", async ({ page }) => {
+test("rapid counter clicks do not lose state", async () => {
   await page.goto("/");
   const btn = page.getByTestId("counter-increment");
   const value = page.getByTestId("counter-value");
@@ -556,7 +568,7 @@ test("rapid counter clicks do not lose state", async ({ page }) => {
   await expect(value).toHaveText("Count: 50");
 });
 
-test("rapid tab switching does not crash", async ({ page }) => {
+test("rapid tab switching does not crash", async () => {
   await page.goto("/");
   const f = page.getByTestId("tabs-fixture");
   const tabs = ["Alpha", "Beta", "Gamma"];
@@ -571,7 +583,7 @@ test("rapid tab switching does not crash", async ({ page }) => {
   await expect(f.getByRole("tabpanel", { name: "Alpha" })).toBeVisible();
 });
 
-test("rapid accordion toggle does not crash", async ({ page }) => {
+test("rapid accordion toggle does not crash", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("accordion-fixture").getByRole("button", { name: /What is Chemical/ });
 
@@ -583,7 +595,7 @@ test("rapid accordion toggle does not crash", async ({ page }) => {
   await expect(trigger).toHaveAttribute("aria-expanded");
 });
 
-test("dialog open/close rapidly does not crash", async ({ page }) => {
+test("dialog open/close rapidly does not crash", async () => {
   await page.goto("/");
   const f = page.getByTestId("dialog-fixture");
   const content = page.getByTestId("dialog-content");
@@ -603,7 +615,7 @@ test("dialog open/close rapidly does not crash", async ({ page }) => {
 // Tests that verify multiple components work together correctly.
 // ===========================================================================
 
-test("counter + tabs + select all work independently", async ({ page }) => {
+test("counter + tabs + select all work independently", async () => {
   await page.goto("/");
 
   // Counter
@@ -624,7 +636,7 @@ test("counter + tabs + select all work independently", async ({ page }) => {
   await expect(page.getByTestId("counter-value")).toHaveText("Count: 2");
 });
 
-test("nested components maintain independent state", async ({ page }) => {
+test("nested components maintain independent state", async () => {
   await page.goto("/");
   const f = page.getByTestId("nested-fixture");
 
@@ -646,7 +658,7 @@ test("nested components maintain independent state", async ({ page }) => {
   await expect(f.getByTestId("nested-count")).toHaveText("Count: 1");
 });
 
-test("error boundary does not affect other components", async ({ page }) => {
+test("error boundary does not affect other components", async () => {
   await page.goto("/");
 
   // Counter should work
@@ -668,7 +680,7 @@ test("error boundary does not affect other components", async ({ page }) => {
 // Verify the page has zero console errors after all interactions.
 // ===========================================================================
 
-test("no runtime errors after full interaction sequence", async ({ page }) => {
+test("no runtime errors after full interaction sequence", async () => {
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(String(err)));
   page.on("console", (msg) => {
@@ -712,7 +724,7 @@ test("no runtime errors after full interaction sequence", async ({ page }) => {
   expect(errors, errors.join("\n")).toEqual([]);
 });
 
-test("no runtime errors after rapid interactions", async ({ page }) => {
+test("no runtime errors after rapid interactions", async () => {
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(String(err)));
   page.on("console", (msg) => {
@@ -750,13 +762,13 @@ test("no runtime errors after rapid interactions", async ({ page }) => {
 // Verify that the new ?? and ?. operators work correctly in component logic.
 // ===========================================================================
 
-test("optional chaining does not crash component", async ({ page }) => {
+test("optional chaining does not crash component", async () => {
   await page.goto("/");
   // The page should load without errors — optional chaining compiles correctly
   await expect(page.getByTestId("counter-value")).toHaveText("Count: 0");
 });
 
-test("nullish coalescing provides fallback value", async ({ page }) => {
+test("nullish coalescing provides fallback value", async () => {
   await page.goto("/");
   // Components using ?? should render correctly
   await expect(page.getByTestId("counter-fixture")).toBeVisible();
@@ -768,7 +780,7 @@ test("nullish coalescing provides fallback value", async ({ page }) => {
 // Verify that inline style={{ }} objects render correctly in SSR.
 // ===========================================================================
 
-test("components with inline styles render correctly", async ({ page }) => {
+test("components with inline styles render correctly", async () => {
   await page.goto("/");
   // Card fixture uses inline styles — verify it renders
   const f = page.getByTestId("card-fixture");
@@ -782,13 +794,13 @@ test("components with inline styles render correctly", async ({ page }) => {
 // Verify that boolean props (true/false) render correctly in SSR.
 // ===========================================================================
 
-test("disabled prop renders as disabled attribute", async ({ page }) => {
+test("disabled prop renders as disabled attribute", async () => {
   await page.goto("/");
   const btn = page.getByTestId("button-fixture").getByTestId("btn-disabled");
   await expect(btn).toBeDisabled();
 });
 
-test("defaultOpen prop renders accordion item open", async ({ page }) => {
+test("defaultOpen prop renders accordion item open", async () => {
   await page.goto("/");
   // Check that accordion items with defaultOpen={false} are closed
   const f = page.getByTestId("accordion-fixture");
@@ -803,8 +815,10 @@ test("defaultOpen prop renders accordion item open", async ({ page }) => {
 // special characters are properly escaped in SSR output.
 // ===========================================================================
 
-test("dialog title with special characters renders", async ({ page }) => {
+test("dialog title with special characters renders", async () => {
   await page.goto("/");
   await page.getByTestId("dialog-fixture").getByTestId("dialog-open").click();
   await expect(page.getByTestId("dialog-content")).toContainText("Dialog title");
+});
+
 });

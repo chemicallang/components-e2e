@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
 
 // ===========================================================================
 // COMPREHENSIVE COMPONENTS E2E TEST SUITE
@@ -11,7 +12,20 @@ import { test, expect } from "@playwright/test";
 // ---------------------------------------------------------------------------
 // Counter
 // ---------------------------------------------------------------------------
-test("counter increments after hydration", async ({ page }) => {
+
+let page: Page;
+
+test.describe.serial("Components", () => {
+  test.beforeAll(async ({ browser }) => {
+    page = await browser.newPage();
+  });
+
+  test.afterAll(async () => {
+    if (page) await page.close();
+  });
+
+
+test("counter increments after hydration", async () => {
   await page.goto("/");
   const value = page.getByTestId("counter-value");
   await expect(value).toHaveText("Count: 0");
@@ -21,7 +35,7 @@ test("counter increments after hydration", async ({ page }) => {
   await expect(value).toHaveText("Count: 2");
 });
 
-test("counter resets to zero", async ({ page }) => {
+test("counter resets to zero", async () => {
   await page.goto("/");
   await page.getByTestId("counter-increment").click();
   await page.getByTestId("counter-reset").click();
@@ -31,7 +45,7 @@ test("counter resets to zero", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Button
 // ---------------------------------------------------------------------------
-test("button renders all variants", async ({ page }) => {
+test("button renders all variants", async () => {
   await page.goto("/");
   const f = page.getByTestId("button-fixture");
   for (const v of ["default", "destructive", "outline", "secondary", "ghost", "link", "success", "warning", "info", "accent"]) {
@@ -39,7 +53,7 @@ test("button renders all variants", async ({ page }) => {
   }
 });
 
-test("button renders sizes", async ({ page }) => {
+test("button renders sizes", async () => {
   await page.goto("/");
   const f = page.getByTestId("button-fixture");
   await expect(f.getByTestId("btn-sm")).toHaveAttribute("data-size", "sm");
@@ -47,14 +61,14 @@ test("button renders sizes", async ({ page }) => {
   await expect(f.getByTestId("btn-icon")).toHaveAttribute("data-size", "icon");
 });
 
-test("button disabled state", async ({ page }) => {
+test("button disabled state", async () => {
   await page.goto("/");
   const btn = page.getByTestId("button-fixture").getByTestId("btn-disabled");
   await expect(btn).toBeDisabled();
   await expect(btn).toHaveAttribute("aria-disabled", "true");
 });
 
-test("button loading state", async ({ page }) => {
+test("button loading state", async () => {
   await page.goto("/");
   const btn = page.getByTestId("button-fixture").getByTestId("btn-loading");
   await btn.click();
@@ -64,7 +78,7 @@ test("button loading state", async ({ page }) => {
   await expect(btn).not.toHaveAttribute("loading", "true", { timeout: 5000 });
 });
 
-test("button is a <button type=button>", async ({ page }) => {
+test("button is a <button type=button>", async () => {
   await page.goto("/");
   const btn = page.getByTestId("button-fixture").getByTestId("btn-default");
   await expect(btn).toHaveJSProperty("tagName", "BUTTON");
@@ -74,7 +88,7 @@ test("button is a <button type=button>", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Tabs
 // ---------------------------------------------------------------------------
-test("tabs switch panels on click", async ({ page }) => {
+test("tabs switch panels on click", async () => {
   await page.goto("/");
   const f = page.getByTestId("tabs-fixture");
   await expect(f.getByRole("tabpanel", { name: "Alpha" })).toBeVisible();
@@ -83,7 +97,7 @@ test("tabs switch panels on click", async ({ page }) => {
   await expect(f.getByRole("tabpanel", { name: "Alpha" })).toBeHidden();
 });
 
-test("tabs arrow keys navigate", async ({ page }) => {
+test("tabs arrow keys navigate", async () => {
   await page.goto("/");
   const f = page.getByTestId("tabs-fixture");
   const alpha = f.getByRole("tab", { name: "Alpha" });
@@ -105,7 +119,7 @@ test("tabs arrow keys navigate", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Accordion
 // ---------------------------------------------------------------------------
-test("accordion opens and closes", async ({ page }) => {
+test("accordion opens and closes", async () => {
   await page.goto("/");
   const f = page.getByTestId("accordion-fixture");
   const summary = f.getByRole("button", { name: /What is Chemical/ });
@@ -117,7 +131,7 @@ test("accordion opens and closes", async ({ page }) => {
   await expect(content).toBeHidden();
 });
 
-test("accordion arrow keys navigate", async ({ page }) => {
+test("accordion arrow keys navigate", async () => {
   await page.goto("/");
   const f = page.getByTestId("accordion-fixture");
   const first = f.getByRole("button", { name: /What is Chemical/ });
@@ -129,7 +143,7 @@ test("accordion arrow keys navigate", async ({ page }) => {
   await expect(first).toBeFocused();
 });
 
-test("accordion multiple items open simultaneously", async ({ page }) => {
+test("accordion multiple items open simultaneously", async () => {
   await page.goto("/");
   const f = page.getByTestId("accordion-multi-fixture");
   await expect(f.getByText("Content A")).toBeVisible();
@@ -143,7 +157,7 @@ test("accordion multiple items open simultaneously", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Dialog
 // ---------------------------------------------------------------------------
-test("dialog opens, shows content, closes", async ({ page }) => {
+test("dialog opens, shows content, closes", async () => {
   await page.goto("/");
   const f = page.getByTestId("dialog-fixture");
   await expect(page.getByTestId("dialog-content")).toBeHidden();
@@ -154,7 +168,7 @@ test("dialog opens, shows content, closes", async ({ page }) => {
   await expect(page.getByTestId("dialog-content")).toBeHidden();
 });
 
-test("dialog inerts the background", async ({ page }) => {
+test("dialog inerts the background", async () => {
   await page.goto("/");
   const main = page.locator("main");
   await expect(main).not.toHaveAttribute("inert");
@@ -166,7 +180,7 @@ test("dialog inerts the background", async ({ page }) => {
   await expect(main).not.toHaveAttribute("inert");
 });
 
-test("dialog traps focus and closes on Escape", async ({ page }) => {
+test("dialog traps focus and closes on Escape", async () => {
   await page.goto("/");
   await page.getByTestId("dialog-fixture").getByTestId("dialog-open").click();
   const confirm = page.getByTestId("dialog-content").getByTestId("dialog-confirm");
@@ -180,7 +194,7 @@ test("dialog traps focus and closes on Escape", async ({ page }) => {
   await expect(page.getByTestId("dialog-content")).toBeHidden();
 });
 
-test("dialog has aria-modal", async ({ page }) => {
+test("dialog has aria-modal", async () => {
   await page.goto("/");
   await page.getByTestId("dialog-fixture").getByTestId("dialog-open").click();
   // Multiple dialogs may exist on page; scope to the visible one
@@ -191,7 +205,7 @@ test("dialog has aria-modal", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Select
 // ---------------------------------------------------------------------------
-test("select opens, picks option, reports value", async ({ page }) => {
+test("select opens, picks option, reports value", async () => {
   await page.goto("/");
   const f = page.getByTestId("select-fixture");
   await expect(f.getByTestId("select-value")).toHaveText("Chosen: none");
@@ -201,7 +215,7 @@ test("select opens, picks option, reports value", async ({ page }) => {
   await expect(f.getByTestId("select-value")).toHaveText("Chosen: Banana");
 });
 
-test("select keyboard navigation and typeahead", async ({ page }) => {
+test("select keyboard navigation and typeahead", async () => {
   await page.goto("/");
   const f = page.getByTestId("select-fixture");
   const trigger = f.locator('button[aria-haspopup="listbox"]');
@@ -220,7 +234,7 @@ test("select keyboard navigation and typeahead", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Portal
 // ---------------------------------------------------------------------------
-test("select escapes overflow:hidden via portal", async ({ page }) => {
+test("select escapes overflow:hidden via portal", async () => {
   await page.goto("/");
   const f = page.getByTestId("portal-fixture");
   await f.getByTestId("portal-overflow-select").getByRole("button").click();
@@ -238,7 +252,7 @@ test("select escapes overflow:hidden via portal", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Slider
 // ---------------------------------------------------------------------------
-test("slider keyboard interaction", async ({ page }) => {
+test("slider keyboard interaction", async () => {
   await page.goto("/");
   const f = page.getByTestId("slider-fixture");
   const slider = f.getByRole("slider", { name: "Volume" });
@@ -255,7 +269,7 @@ test("slider keyboard interaction", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Checkbox / Switch / Radio
 // ---------------------------------------------------------------------------
-test("checkbox toggles", async ({ page }) => {
+test("checkbox toggles", async () => {
   await page.goto("/");
   const cb = page.getByTestId("checkbox-control").locator("input");
   await expect(cb).not.toBeChecked();
@@ -263,7 +277,7 @@ test("checkbox toggles", async ({ page }) => {
   await expect(cb).toBeChecked();
 });
 
-test("switch toggles", async ({ page }) => {
+test("switch toggles", async () => {
   await page.goto("/");
   const sw = page.getByTestId("switch-control").locator("input");
   await expect(sw).toBeChecked();
@@ -271,7 +285,7 @@ test("switch toggles", async ({ page }) => {
   await expect(sw).not.toBeChecked();
 });
 
-test("radio mutual exclusion", async ({ page }) => {
+test("radio mutual exclusion", async () => {
   await page.goto("/");
   const a = page.getByTestId("radio-a").locator("input");
   const b = page.getByTestId("radio-b").locator("input");
@@ -284,7 +298,7 @@ test("radio mutual exclusion", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // ToggleGroup (single)
 // ---------------------------------------------------------------------------
-test("toggle group single mode", async ({ page }) => {
+test("toggle group single mode", async () => {
   await page.goto("/");
   const f = page.getByTestId("togglegroup-fixture");
   const bold = f.getByRole("button", { name: "Bold" });
@@ -298,7 +312,7 @@ test("toggle group single mode", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // ToggleGroup (multiple)
 // ---------------------------------------------------------------------------
-test("toggle group multiple mode", async ({ page }) => {
+test("toggle group multiple mode", async () => {
   await page.goto("/");
   const f = page.getByTestId("togglegroup-multi-fixture");
   const bold = f.getByRole("button", { name: "Bold" });
@@ -314,7 +328,7 @@ test("toggle group multiple mode", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // RadioGroup
 // ---------------------------------------------------------------------------
-test("radio group selects single option", async ({ page }) => {
+test("radio group selects single option", async () => {
   await page.goto("/");
   const f = page.getByTestId("radiogroup-fixture");
   await expect(f.getByRole("radio", { name: "Medium" })).toBeChecked();
@@ -323,12 +337,12 @@ test("radio group selects single option", async ({ page }) => {
   await expect(f.getByRole("radio", { name: "Medium" })).not.toBeChecked();
 });
 
-test("radio group defaultValue after hydration", async ({ page }) => {
+test("radio group defaultValue after hydration", async () => {
   await page.goto("/");
   await expect(page.getByTestId("radiogroup-fixture").getByRole("radio", { name: "Medium" })).toBeChecked();
 });
 
-test("radio item without provider stays unchecked", async ({ page }) => {
+test("radio item without provider stays unchecked", async () => {
   await page.goto("/");
   const solo = page.getByTestId("radiogroup-noprovider-fixture").getByRole("radio", { name: "Solo" });
   await expect(solo).not.toBeChecked();
@@ -339,7 +353,7 @@ test("radio item without provider stays unchecked", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Toast
 // ---------------------------------------------------------------------------
-test("toast auto-dismisses", async ({ page }) => {
+test("toast auto-dismisses", async () => {
   await page.goto("/");
   const toast = page.getByTestId("toast-item");
   await expect(toast).toContainText("Changes saved");
@@ -349,7 +363,7 @@ test("toast auto-dismisses", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Collapsible
 // ---------------------------------------------------------------------------
-test("collapsible toggles content", async ({ page }) => {
+test("collapsible toggles content", async () => {
   await page.goto("/");
   const f = page.getByTestId("collapsible-fixture");
   const trigger = f.getByRole("button", { name: /More info/ });
@@ -364,7 +378,7 @@ test("collapsible toggles content", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Sheet
 // ---------------------------------------------------------------------------
-test("sheet opens and closes", async ({ page }) => {
+test("sheet opens and closes", async () => {
   await page.goto("/");
   await page.getByTestId("sheet-fixture").getByTestId("sheet-open").click();
   await expect(page.getByRole("dialog")).toBeVisible();
@@ -373,7 +387,7 @@ test("sheet opens and closes", async ({ page }) => {
   await expect(page.getByRole("dialog")).toBeHidden();
 });
 
-test("sheet inerts background", async ({ page }) => {
+test("sheet inerts background", async () => {
   await page.goto("/");
   const main = page.locator("main");
   await page.getByTestId("sheet-fixture").getByTestId("sheet-open").click();
@@ -385,7 +399,7 @@ test("sheet inerts background", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Dropdown
 // ---------------------------------------------------------------------------
-test("dropdown escapes overflow:hidden", async ({ page }) => {
+test("dropdown escapes overflow:hidden", async () => {
   await page.goto("/");
   await page.getByTestId("dropdown-fixture").getByRole("button", { name: "Actions" }).click();
   const menu = page.getByRole("menu");
@@ -396,7 +410,7 @@ test("dropdown escapes overflow:hidden", async ({ page }) => {
   await expect(menu).toBeHidden();
 });
 
-test("select menu does not inert background", async ({ page }) => {
+test("select menu does not inert background", async () => {
   await page.goto("/");
   const main = page.locator("main");
   await page.getByTestId("select-fixture").getByRole("button", { name: "Pick a fruit" }).click();
@@ -407,7 +421,7 @@ test("select menu does not inert background", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Error boundary
 // ---------------------------------------------------------------------------
-test("error boundary shows fallback UI", async ({ page }) => {
+test("error boundary shows fallback UI", async () => {
   await page.goto("/");
   const f = page.getByTestId("error-fixture");
   await f.getByTestId("error-mount").click();
@@ -416,7 +430,7 @@ test("error boundary shows fallback UI", async ({ page }) => {
   await expect(page.getByTestId("counter-value")).toHaveText("Count: 1");
 });
 
-test("error boundary default fallback", async ({ page }) => {
+test("error boundary default fallback", async () => {
   await page.goto("/");
   await page.getByTestId("error-fixture").getByTestId("error-default-mount").click();
   const fallback = page.getByTestId("error-fixture").locator(".chx-error-boundary");
@@ -426,7 +440,7 @@ test("error boundary default fallback", async ({ page }) => {
 // ===========================================================================
 // Alert - uses role="alert" and data-variant (rendered by component)
 // ===========================================================================
-test("alert renders all variants with role=alert", async ({ page }) => {
+test("alert renders all variants with role=alert", async () => {
   await page.goto("/");
   const f = page.getByTestId("alert-fixture");
   for (const v of ["info", "success", "error", "warning", "default", "accent"]) {
@@ -434,14 +448,14 @@ test("alert renders all variants with role=alert", async ({ page }) => {
   }
 });
 
-test("alert shows title and description", async ({ page }) => {
+test("alert shows title and description", async () => {
   await page.goto("/");
   const info = page.getByTestId("alert-fixture").locator('[data-variant="info"]');
   await expect(info).toContainText("Heads up");
   await expect(info).toContainText("This is info.");
 });
 
-test("alert dismiss removes it", async ({ page }) => {
+test("alert dismiss removes it", async () => {
   await page.goto("/");
   const info = page.getByTestId("alert-fixture").locator('[data-variant="info"]');
   await info.getByRole("button", { name: "Dismiss alert" }).click();
@@ -452,7 +466,7 @@ test("alert dismiss removes it", async ({ page }) => {
 // Avatar - uses data-size (rendered by component). Note: Avatar does NOT
 // forward data-testid; use structural selectors within the fixture.
 // ===========================================================================
-test("avatar renders sizes and fallback text", async ({ page }) => {
+test("avatar renders sizes and fallback text", async () => {
   await page.goto("/");
   const f = page.getByTestId("avatar-fixture");
   // Avatar renders span[data-size] with fallback text inside.
@@ -462,12 +476,12 @@ test("avatar renders sizes and fallback text", async ({ page }) => {
   await expect(f.locator('[data-size="xl"]').first()).toContainText("XL");
 });
 
-test("avatar bordered style", async ({ page }) => {
+test("avatar bordered style", async () => {
   await page.goto("/");
   await expect(page.getByTestId("avatar-fixture").locator('[data-bordered="true"]')).toContainText("BD");
 });
 
-test("avatar group renders multiple avatars", async ({ page }) => {
+test("avatar group renders multiple avatars", async () => {
   await page.goto("/");
   // AvatarGroup is a div wrapper; its children are Avatar spans with data-size.
   const group = page.getByTestId("avatar-fixture").locator(".rAiEyYN").first().locator("..");
@@ -476,7 +490,7 @@ test("avatar group renders multiple avatars", async ({ page }) => {
   expect(await avatars.count()).toBeGreaterThanOrEqual(5); // 5 individual + 3 in group = 8
 });
 
-test("avatar more shows count", async ({ page }) => {
+test("avatar more shows count", async () => {
   await page.goto("/");
   // AvatarMore renders span with "+5" text inside avatar-fixture.
   await expect(page.getByTestId("avatar-fixture").getByText("+5")).toBeVisible();
@@ -486,7 +500,7 @@ test("avatar more shows count", async ({ page }) => {
 // Badge - uses data-variant (rendered by component). Badge does NOT forward
 // data-testid; use structural selectors.
 // ===========================================================================
-test("badge renders all variants", async ({ page }) => {
+test("badge renders all variants", async () => {
   await page.goto("/");
   const f = page.getByTestId("badge-fixture");
   // Badge renders span[data-variant] with text.
@@ -497,7 +511,7 @@ test("badge renders all variants", async ({ page }) => {
   await expect(f.locator('span[data-variant="outline"]').first()).toContainText("Outline");
 });
 
-test("badge renders sizes", async ({ page }) => {
+test("badge renders sizes", async () => {
   await page.goto("/");
   const f = page.getByTestId("badge-fixture");
   await expect(f.locator('span[data-size="xs"]').first()).toContainText("XS");
@@ -505,7 +519,7 @@ test("badge renders sizes", async ({ page }) => {
   await expect(f.locator('span[data-size="lg"]').first()).toContainText("LG");
 });
 
-test("badge renders as inline span", async ({ page }) => {
+test("badge renders as inline span", async () => {
   await page.goto("/");
   const badge = page.getByTestId("badge-fixture").locator('span[data-variant="default"]').first();
   await expect(badge).toHaveJSProperty("tagName", "SPAN");
@@ -515,7 +529,7 @@ test("badge renders as inline span", async ({ page }) => {
 // Card - uses data-interactive (rendered by component). Card does NOT forward
 // data-testid; find by text content or structural selectors.
 // ===========================================================================
-test("card renders header, title, description, content, footer", async ({ page }) => {
+test("card renders header, title, description, content, footer", async () => {
   await page.goto("/");
   const f = page.getByTestId("card-fixture");
   await expect(f.getByText("Card title")).toBeVisible();
@@ -524,14 +538,14 @@ test("card renders header, title, description, content, footer", async ({ page }
   await expect(f.getByTestId("card-action-btn")).toBeVisible();
 });
 
-test("card interactive onClick fires", async ({ page }) => {
+test("card interactive onClick fires", async () => {
   await page.goto("/");
   await expect(page.getByTestId("card-fixture").getByTestId("card-interactive-text")).toHaveText("Click me");
   await page.getByTestId("card-fixture").getByTestId("card-interactive-text").click();
   await expect(page.getByTestId("card-fixture").getByTestId("card-interactive-text")).toHaveText("Clicked!");
 });
 
-test("card data-interactive attribute", async ({ page }) => {
+test("card data-interactive attribute", async () => {
   await page.goto("/");
   const f = page.getByTestId("card-fixture");
   // The interactive card div has data-interactive="true"; the basic one has "false".
@@ -539,14 +553,14 @@ test("card data-interactive attribute", async ({ page }) => {
   await expect(f.locator('[data-interactive="false"]').first()).toBeVisible();
 });
 
-test("card title level renders correct heading", async ({ page }) => {
+test("card title level renders correct heading", async () => {
   await page.goto("/");
   const f = page.getByTestId("card-fixture");
   // The "H2 title" card should have an h2.
   await expect(f.locator("h2")).toContainText("H2 title");
 });
 
-test("card action slot renders", async ({ page }) => {
+test("card action slot renders", async () => {
   await page.goto("/");
   await expect(page.getByTestId("card-fixture").getByText("With action")).toBeVisible();
 });
@@ -554,14 +568,14 @@ test("card action slot renders", async ({ page }) => {
 // ===========================================================================
 // Input - Input DOES forward data-testid (spreads {...props}).
 // ===========================================================================
-test("input renders default variant and placeholder", async ({ page }) => {
+test("input renders default variant and placeholder", async () => {
   await page.goto("/");
   const input = page.getByTestId("input-fixture").getByTestId("input-default");
   await expect(input).toHaveAttribute("placeholder", "Default input");
   await expect(input).toHaveAttribute("data-variant", "default");
 });
 
-test("input renders all variants", async ({ page }) => {
+test("input renders all variants", async () => {
   await page.goto("/");
   const f = page.getByTestId("input-fixture");
   await expect(f.getByTestId("input-filled")).toHaveAttribute("data-variant", "filled");
@@ -570,19 +584,19 @@ test("input renders all variants", async ({ page }) => {
   await expect(f.getByTestId("input-success")).toHaveAttribute("data-variant", "success");
 });
 
-test("input renders sizes", async ({ page }) => {
+test("input renders sizes", async () => {
   await page.goto("/");
   const f = page.getByTestId("input-fixture");
   await expect(f.getByTestId("input-sm")).toHaveAttribute("data-size", "sm");
   await expect(f.getByTestId("input-lg")).toHaveAttribute("data-size", "lg");
 });
 
-test("input disabled state", async ({ page }) => {
+test("input disabled state", async () => {
   await page.goto("/");
   await expect(page.getByTestId("input-fixture").getByTestId("input-disabled")).toBeDisabled();
 });
 
-test("input typed value updates state", async ({ page }) => {
+test("input typed value updates state", async () => {
   await page.goto("/");
   const f = page.getByTestId("input-fixture");
   await expect(f.getByTestId("input-value")).toHaveText("empty");
@@ -597,7 +611,7 @@ test("input typed value updates state", async ({ page }) => {
   await expect(f.getByTestId("input-value")).toHaveText("hello");
 });
 
-test("textarea renders and accepts input", async ({ page }) => {
+test("textarea renders and accepts input", async () => {
   await page.goto("/");
   const ta = page.getByTestId("input-fixture").getByTestId("textarea-default");
   await expect(ta).toHaveJSProperty("tagName", "TEXTAREA");
@@ -605,7 +619,7 @@ test("textarea renders and accepts input", async ({ page }) => {
   await expect(ta).toHaveValue("some text");
 });
 
-test("field renders label, hint, and error", async ({ page }) => {
+test("field renders label, hint, and error", async () => {
   await page.goto("/");
   const f = page.getByTestId("input-fixture");
   // Field component does not forward data-testid; locate by text content
@@ -616,7 +630,7 @@ test("field renders label, hint, and error", async ({ page }) => {
 // ===========================================================================
 // Separator - Separator does NOT forward data-testid; use role selector.
 // ===========================================================================
-test("separator has role=separator", async ({ page }) => {
+test("separator has role=separator", async () => {
   await page.goto("/");
   const sep = page.getByTestId("separator-fixture").locator("[role=\"separator\"]");
   await expect(sep).toHaveAttribute("data-orientation", "horizontal");
@@ -626,7 +640,7 @@ test("separator has role=separator", async ({ page }) => {
 // Typography - sub-components do NOT forward data-testid; use tag/role
 // selectors.
 // ===========================================================================
-test("typography renders heading levels", async ({ page }) => {
+test("typography renders heading levels", async () => {
   await page.goto("/");
   const f = page.getByTestId("typography-fixture");
   await expect(f.locator("h1").first()).toContainText("Heading 1");
@@ -636,7 +650,7 @@ test("typography renders heading levels", async ({ page }) => {
   await expect(f.locator("h6").first()).toContainText("Heading 6");
 });
 
-test("typography Heading selects level dynamically", async ({ page }) => {
+test("typography Heading selects level dynamically", async () => {
   await page.goto("/");
   const f = page.getByTestId("typography-fixture");
   const h3s = f.locator("h3");
@@ -644,33 +658,33 @@ test("typography Heading selects level dynamically", async ({ page }) => {
   await expect(h3s.last()).toContainText("Dynamic level");
 });
 
-test("typography Text muted variant", async ({ page }) => {
+test("typography Text muted variant", async () => {
   await page.goto("/");
   const f = page.getByTestId("typography-fixture");
   // Text renders <p data-muted="true"> for muted.
   await expect(f.locator('[data-muted="true"]').first()).toContainText("Muted text.");
 });
 
-test("typography Lead and Caption render", async ({ page }) => {
+test("typography Lead and Caption render", async () => {
   await page.goto("/");
   const f = page.getByTestId("typography-fixture");
   await expect(f.getByText("Lead paragraph.")).toBeVisible();
   await expect(f.getByText("Caption text.")).toBeVisible();
 });
 
-test("typography CodeText renders code tag", async ({ page }) => {
+test("typography CodeText renders code tag", async () => {
   await page.goto("/");
   await expect(page.getByTestId("typography-fixture").locator("code").first()).toContainText("console.log()");
 });
 
-test("typography Link renders anchor with href", async ({ page }) => {
+test("typography Link renders anchor with href", async () => {
   await page.goto("/");
   const link = page.getByTestId("typography-fixture").locator("a").first();
   await expect(link).toHaveAttribute("href", "https://example.com");
   await expect(link).toContainText("External link");
 });
 
-test("typography Blockquote renders with cite", async ({ page }) => {
+test("typography Blockquote renders with cite", async () => {
   await page.goto("/");
   const bq = page.getByTestId("typography-fixture").locator("blockquote").first();
   await expect(bq).toContainText("A wise quote.");
@@ -680,14 +694,14 @@ test("typography Blockquote renders with cite", async ({ page }) => {
 // ===========================================================================
 // Progress - Progress DOES forward data-testid (spreads {...props}).
 // ===========================================================================
-test("progress renders with correct variant and value", async ({ page }) => {
+test("progress renders with correct variant and value", async () => {
   await page.goto("/");
   const p = page.getByTestId("progress-fixture").getByTestId("progress-default");
   await expect(p).toHaveJSProperty("tagName", "PROGRESS");
   await expect(p).toHaveAttribute("value", "45");
 });
 
-test("progress renders all variants", async ({ page }) => {
+test("progress renders all variants", async () => {
   await page.goto("/");
   const f = page.getByTestId("progress-fixture");
   await expect(f.getByTestId("progress-primary")).toHaveAttribute("data-variant", "primary");
@@ -698,7 +712,7 @@ test("progress renders all variants", async ({ page }) => {
 // ===========================================================================
 // Pagination
 // ===========================================================================
-test("pagination navigates between pages", async ({ page }) => {
+test("pagination navigates between pages", async () => {
   await page.goto("/");
   const f = page.getByTestId("pagination-fixture");
   await expect(f.getByRole("button", { name: "Previous page" })).toBeDisabled();
@@ -711,7 +725,7 @@ test("pagination navigates between pages", async ({ page }) => {
 // ===========================================================================
 // List
 // ===========================================================================
-test("list renders items", async ({ page }) => {
+test("list renders items", async () => {
   await page.goto("/");
   const items = page.getByTestId("list-fixture").getByTestId("list").locator("li");
   await expect(items).toHaveCount(3);
@@ -722,7 +736,7 @@ test("list renders items", async ({ page }) => {
 // ===========================================================================
 // Table
 // ===========================================================================
-test("table renders headers and cells", async ({ page }) => {
+test("table renders headers and cells", async () => {
   await page.goto("/");
   const t = page.getByTestId("table-fixture").getByTestId("table");
   await expect(t).toHaveJSProperty("tagName", "TABLE");
@@ -734,7 +748,7 @@ test("table renders headers and cells", async ({ page }) => {
 // ===========================================================================
 // Tooltip - Tooltip does NOT forward data-testid; use role=tooltip.
 // ===========================================================================
-test("tooltip appears on hover", async ({ page }) => {
+test("tooltip appears on hover", async () => {
   await page.goto("/");
   const f = page.getByTestId("tooltip-fixture");
   // Tooltip renders a span with role="tooltip" inside the fixture.
@@ -748,7 +762,7 @@ test("tooltip appears on hover", async ({ page }) => {
   await expect(tip).toHaveCSS("opacity", "0");
 });
 
-test("tooltip bottom position", async ({ page }) => {
+test("tooltip bottom position", async () => {
   await page.goto("/");
   const f = page.getByTestId("tooltip-fixture");
   // Hover the second button (bottom tooltip).
@@ -761,7 +775,7 @@ test("tooltip bottom position", async ({ page }) => {
 // ===========================================================================
 // Nested
 // ===========================================================================
-test("nested components work together", async ({ page }) => {
+test("nested components work together", async () => {
   await page.goto("/");
   const f = page.getByTestId("nested-fixture");
   await expect(f.getByTestId("nested-count")).toHaveText("Count: 0");
@@ -781,14 +795,14 @@ test("nested components work together", async ({ page }) => {
 // ===========================================================================
 // Performance
 // ===========================================================================
-test("SSR HTML size is reasonable", async ({ page }) => {
+test("SSR HTML size is reasonable", async () => {
   await page.goto("/");
   const htmlSize = await page.evaluate(() => document.documentElement.outerHTML.length);
   expect(htmlSize).toBeLessThan(200_000);
   expect(htmlSize).toBeGreaterThan(1_000);
 });
 
-test("SSR renders all component fixtures", async ({ page }) => {
+test("SSR renders all component fixtures", async () => {
   await page.goto("/");
   for (const tid of [
     "counter-fixture", "button-fixture", "tabs-fixture", "accordion-fixture",
@@ -804,7 +818,7 @@ test("SSR renders all component fixtures", async ({ page }) => {
   }
 });
 
-test("hydration completes quickly", async ({ page }) => {
+test("hydration completes quickly", async () => {
   const start = Date.now();
   await page.goto("/");
   await page.getByTestId("counter-increment").click();
@@ -812,7 +826,7 @@ test("hydration completes quickly", async ({ page }) => {
   expect(Date.now() - start).toBeLessThan(5000);
 });
 
-test("rapid clicks do not crash", async ({ page }) => {
+test("rapid clicks do not crash", async () => {
   await page.goto("/");
   const btn = page.getByTestId("perf-fixture").getByTestId("perf-btn");
   const count = page.getByTestId("perf-fixture").getByTestId("perf-count");
@@ -827,7 +841,7 @@ test("rapid clicks do not crash", async ({ page }) => {
 // ===========================================================================
 // Accessibility
 // ===========================================================================
-test("all buttons have accessible names", async ({ page }) => {
+test("all buttons have accessible names", async () => {
   await page.goto("/");
   const buttons = page.getByTestId("button-fixture").locator("button");
   const count = await buttons.count();
@@ -837,13 +851,13 @@ test("all buttons have accessible names", async ({ page }) => {
   }
 });
 
-test("accordion items have aria-expanded", async ({ page }) => {
+test("accordion items have aria-expanded", async () => {
   await page.goto("/");
   const triggers = page.getByTestId("accordion-fixture").locator("button[aria-expanded]");
   expect(await triggers.count()).toBeGreaterThanOrEqual(3);
 });
 
-test("collapsible has aria-expanded", async ({ page }) => {
+test("collapsible has aria-expanded", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("collapsible-fixture").getByRole("button", { name: /More info/ });
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
@@ -860,19 +874,19 @@ test("collapsible has aria-expanded", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Button edge cases
 // ---------------------------------------------------------------------------
-test("button type=submit renders with type attribute", async ({ page }) => {
+test("button type=submit renders with type attribute", async () => {
   await page.goto("/");
   await expect(page.getByTestId("button-edge-fixture").getByTestId("btn-submit")).toHaveAttribute("type", "submit");
 });
 
-test("button aria-label renders for screen readers", async ({ page }) => {
+test("button aria-label renders for screen readers", async () => {
   await page.goto("/");
   const btn = page.getByTestId("button-edge-fixture").getByTestId("btn-aria");
   await expect(btn).toHaveAttribute("aria-label", "Close dialog");
   await expect(btn).toContainText("X");
 });
 
-test("button disabled prevents click from firing", async ({ page }) => {
+test("button disabled prevents click from firing", async () => {
   await page.goto("/");
   const f = page.getByTestId("button-edge-fixture");
   const btn = f.getByTestId("btn-disabled-interactive");
@@ -881,7 +895,7 @@ test("button disabled prevents click from firing", async ({ page }) => {
   await expect(f.getByTestId("btn-submit-state")).toHaveText("not submitted");
 });
 
-test("button loading prevents double-click", async ({ page }) => {
+test("button loading prevents double-click", async () => {
   await page.goto("/");
   const btn = page.getByTestId("button-fixture").getByTestId("btn-loading");
   await btn.click();
@@ -889,14 +903,14 @@ test("button loading prevents double-click", async ({ page }) => {
   await expect(btn).toHaveAttribute("loading", "true", { timeout: 3000 });
 });
 
-test("Fab renders with aria-label", async ({ page }) => {
+test("Fab renders with aria-label", async () => {
   await page.goto("/");
   const fab = page.getByTestId("button-edge-fixture").getByRole("button", { name: "Add item" });
   await expect(fab).toContainText("+");
   await expect(fab).toHaveAttribute("aria-label", "Add item");
 });
 
-test("Fab disabled state", async ({ page }) => {
+test("Fab disabled state", async () => {
   await page.goto("/");
   const fab = page.getByTestId("button-edge-fixture").getByRole("button", { name: "Disabled" });
   await expect(fab).toBeDisabled();
@@ -905,7 +919,7 @@ test("Fab disabled state", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Input edge cases
 // ---------------------------------------------------------------------------
-test("input type=email renders correctly", async ({ page }) => {
+test("input type=email renders correctly", async () => {
   await page.goto("/");
   const f = page.getByTestId("input-edge-fixture");
   const input = f.getByTestId("input-email");
@@ -913,31 +927,31 @@ test("input type=email renders correctly", async ({ page }) => {
   await expect(input).toHaveAttribute("aria-label", "Email input");
 });
 
-test("input type=number renders", async ({ page }) => {
+test("input type=number renders", async () => {
   await page.goto("/");
   const f = page.getByTestId("input-edge-fixture");
   await expect(f.getByTestId("input-number")).toHaveAttribute("type", "number");
 });
 
-test("input type=password renders", async ({ page }) => {
+test("input type=password renders", async () => {
   await page.goto("/");
   const f = page.getByTestId("input-edge-fixture");
   await expect(f.getByTestId("input-password")).toHaveAttribute("type", "password");
 });
 
-test("input type=search renders", async ({ page }) => {
+test("input type=search renders", async () => {
   await page.goto("/");
   const input = page.getByTestId("input-edge-fixture").getByTestId("input-search");
   await expect(input).toHaveAttribute("type", "search");
 });
 
-test("textarea rows attribute is applied", async ({ page }) => {
+test("textarea rows attribute is applied", async () => {
   await page.goto("/");
   const ta = page.getByTestId("input-edge-fixture").getByTestId("textarea-rows");
   await expect(ta).toHaveAttribute("rows", "5");
 });
 
-test("NativeSelect renders and accepts selection", async ({ page }) => {
+test("NativeSelect renders and accepts selection", async () => {
   await page.goto("/");
   const f = page.getByTestId("input-edge-fixture");
   const sel = f.getByTestId("native-select");
@@ -949,7 +963,7 @@ test("NativeSelect renders and accepts selection", async ({ page }) => {
   await expect(f.getByTestId("native-select-value")).toHaveText("b");
 });
 
-test("input focus ring appears on focus", async ({ page }) => {
+test("input focus ring appears on focus", async () => {
   await page.goto("/");
   const input = page.getByTestId("input-fixture").getByTestId("input-default");
   await input.focus();
@@ -959,7 +973,7 @@ test("input focus ring appears on focus", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Select edge cases
 // ---------------------------------------------------------------------------
-test("select controlled mode shows current value", async ({ page }) => {
+test("select controlled mode shows current value", async () => {
   await page.goto("/");
   const f = page.getByTestId("select-edge-fixture");
   await expect(f.getByTestId("select-controlled-value")).toHaveText("Apple");
@@ -968,7 +982,7 @@ test("select controlled mode shows current value", async ({ page }) => {
   await expect(trigger).toContainText("Apple");
 });
 
-test("select disabled state prevents opening", async ({ page }) => {
+test("select disabled state prevents opening", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("select-edge-fixture")
     .locator("[data-testid=select-disabled]").getByRole("button");
@@ -977,7 +991,7 @@ test("select disabled state prevents opening", async ({ page }) => {
   await expect(page.getByRole("listbox")).toBeHidden();
 });
 
-test("select empty options does not crash", async ({ page }) => {
+test("select empty options does not crash", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("select-edge-fixture")
     .locator("[data-testid=select-empty]").getByRole("button");
@@ -990,14 +1004,14 @@ test("select empty options does not crash", async ({ page }) => {
   await expect(listbox).toBeHidden();
 });
 
-test("select defaultValue pre-selects option", async ({ page }) => {
+test("select defaultValue pre-selects option", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("select-edge-fixture")
     .locator("[data-testid=select-defaultvalue]").getByRole("button");
   await expect(trigger).toContainText("Y");
 });
 
-test("select aria-expanded and aria-haspopup", async ({ page }) => {
+test("select aria-expanded and aria-haspopup", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("select-edge-fixture")
     .locator("[data-testid=select-controlled]").getByRole("button");
@@ -1009,7 +1023,7 @@ test("select aria-expanded and aria-haspopup", async ({ page }) => {
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
 
-test("select Escape closes the menu", async ({ page }) => {
+test("select Escape closes the menu", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("select-edge-fixture")
     .locator("[data-testid=select-controlled]").getByRole("button");
@@ -1019,7 +1033,7 @@ test("select Escape closes the menu", async ({ page }) => {
   await expect(page.getByRole("listbox")).toBeHidden();
 });
 
-test("select keyboard Home/End jump to first/last", async ({ page }) => {
+test("select keyboard Home/End jump to first/last", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("select-fixture").getByRole("button", { name: "Pick a fruit" });
   await trigger.focus();
@@ -1032,7 +1046,7 @@ test("select keyboard Home/End jump to first/last", async ({ page }) => {
   await page.keyboard.press("Escape");
 });
 
-test("select Space opens the menu", async ({ page }) => {
+test("select Space opens the menu", async () => {
   await page.goto("/");
   const trigger = page.getByTestId("select-edge-fixture")
     .locator("[data-testid=select-controlled]").getByRole("button");
@@ -1045,7 +1059,7 @@ test("select Space opens the menu", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Slider edge cases (Slider does NOT forward data-testid)
 // ---------------------------------------------------------------------------
-test("slider disabled state prevents interaction", async ({ page }) => {
+test("slider disabled state prevents interaction", async () => {
   await page.goto("/");
   // data-disabled is on the slider container div.
   await expect(page.getByTestId("slider-edge-fixture")
@@ -1059,7 +1073,7 @@ test("slider disabled state prevents interaction", async ({ page }) => {
   await expect(slider).toHaveAttribute("aria-valuenow", "30");
 });
 
-test("slider ArrowUp/Down work like ArrowRight/Left", async ({ page }) => {
+test("slider ArrowUp/Down work like ArrowRight/Left", async () => {
   await page.goto("/");
   const slider = page.getByTestId("slider-edge-fixture")
     .locator("[role=slider]").nth(2); // 3rd slider = controlled
@@ -1071,7 +1085,7 @@ test("slider ArrowUp/Down work like ArrowRight/Left", async ({ page }) => {
   await expect(slider).toHaveAttribute("aria-valuenow", "50");
 });
 
-test("slider respects min/max boundaries", async ({ page }) => {
+test("slider respects min/max boundaries", async () => {
   await page.goto("/");
   const slider = page.getByTestId("slider-edge-fixture")
     .locator("[role=slider]").nth(2); // controlled slider
@@ -1086,7 +1100,7 @@ test("slider respects min/max boundaries", async ({ page }) => {
   await expect(slider).toHaveAttribute("aria-valuenow", "0");
 });
 
-test("slider custom range with step=1", async ({ page }) => {
+test("slider custom range with step=1", async () => {
   await page.goto("/");
   // 2nd slider = custom range (min=10, max=20, default=15)
   const slider = page.getByTestId("slider-edge-fixture")
@@ -1096,7 +1110,7 @@ test("slider custom range with step=1", async ({ page }) => {
   await expect(slider).toHaveAttribute("aria-valuenow", "15");
 });
 
-test("slider aria attributes", async ({ page }) => {
+test("slider aria attributes", async () => {
   await page.goto("/");
   // 3rd slider = controlled (ariaLabel="Controlled")
   const slider = page.getByTestId("slider-edge-fixture")
@@ -1109,7 +1123,7 @@ test("slider aria attributes", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Toast edge cases
 // ---------------------------------------------------------------------------
-test("toast variant=success renders with correct attributes", async ({ page }) => {
+test("toast variant=success renders with correct attributes", async () => {
   await page.goto("/");
   // Toasts auto-dismiss and may be removed from DOM; check SSR HTML directly
   const hasToast = await page.evaluate(() => {
@@ -1126,7 +1140,7 @@ test("toast variant=success renders with correct attributes", async ({ page }) =
   }
 });
 
-test("toast variant=destructive renders", async ({ page }) => {
+test("toast variant=destructive renders", async () => {
   await page.goto("/");
   // Toasts auto-dismiss; verify via SSR HTML presence
   const hasToast = await page.evaluate(() => {
@@ -1141,7 +1155,7 @@ test("toast variant=destructive renders", async ({ page }) => {
   }
 });
 
-test("toast duration=0 does not auto-dismiss", async ({ page }) => {
+test("toast duration=0 does not auto-dismiss", async () => {
   await page.goto("/");
   const toast = page.getByTestId("toast-edge-fixture").getByTestId("toast-persistent");
   await expect(toast).toBeVisible();
@@ -1149,7 +1163,7 @@ test("toast duration=0 does not auto-dismiss", async ({ page }) => {
   await expect(toast).toBeVisible();
 });
 
-test("toast manual close button works", async ({ page }) => {
+test("toast manual close button works", async () => {
   await page.goto("/");
   const toast = page.getByTestId("toast-edge-fixture").getByTestId("toast-persistent");
   await expect(toast).toBeVisible();
@@ -1157,7 +1171,7 @@ test("toast manual close button works", async ({ page }) => {
   await expect(toast).toBeHidden();
 });
 
-test("toast action button fires", async ({ page }) => {
+test("toast action button fires", async () => {
   await page.goto("/");
   const toast = page.getByTestId("toast-edge-fixture").getByTestId("toast-persistent");
   await expect(toast).toContainText("Undo");
@@ -1165,7 +1179,7 @@ test("toast action button fires", async ({ page }) => {
   await expect(toast).toBeHidden();
 });
 
-test("toast description renders below title", async ({ page }) => {
+test("toast description renders below title", async () => {
   await page.goto("/");
   const toast = page.getByTestId("toast-edge-fixture").getByTestId("toast-persistent");
   await expect(toast).toContainText("Persistent");
@@ -1175,7 +1189,7 @@ test("toast description renders below title", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Toggle edge cases
 // ---------------------------------------------------------------------------
-test("checkbox disabled state prevents toggle", async ({ page }) => {
+test("checkbox disabled state prevents toggle", async () => {
   await page.goto("/");
   const f = page.getByTestId("toggle-edge-fixture");
   const cb = f.getByTestId("cb-disabled").locator("input");
@@ -1185,20 +1199,20 @@ test("checkbox disabled state prevents toggle", async ({ page }) => {
   await expect(cb).not.toBeChecked();
 });
 
-test("checkbox renders sm and lg sizes", async ({ page }) => {
+test("checkbox renders sm and lg sizes", async () => {
   await page.goto("/");
   const f = page.getByTestId("toggle-edge-fixture");
   await expect(f.getByTestId("cb-sm")).toHaveAttribute("data-size", "sm");
   await expect(f.getByTestId("cb-lg")).toHaveAttribute("data-size", "lg");
 });
 
-test("checkbox aria-label renders", async ({ page }) => {
+test("checkbox aria-label renders", async () => {
   await page.goto("/");
   const cb = page.getByTestId("toggle-edge-fixture").getByTestId("cb-aria").locator("input");
   await expect(cb).toHaveAttribute("aria-label", "Accept terms");
 });
 
-test("switch disabled state", async ({ page }) => {
+test("switch disabled state", async () => {
   await page.goto("/");
   const f = page.getByTestId("toggle-edge-fixture");
   const sw = f.getByTestId("sw-disabled").locator("input");
@@ -1206,14 +1220,14 @@ test("switch disabled state", async ({ page }) => {
   await expect(f.getByTestId("sw-disabled")).toHaveAttribute("data-disabled", "true");
 });
 
-test("switch renders sm and lg sizes", async ({ page }) => {
+test("switch renders sm and lg sizes", async () => {
   await page.goto("/");
   const f = page.getByTestId("toggle-edge-fixture");
   await expect(f.getByTestId("sw-sm")).toHaveAttribute("data-size", "sm");
   await expect(f.getByTestId("sw-lg")).toHaveAttribute("data-size", "lg");
 });
 
-test("radio disabled state", async ({ page }) => {
+test("radio disabled state", async () => {
   await page.goto("/");
   const f = page.getByTestId("toggle-edge-fixture");
   const radio = f.getByTestId("radio-disabled").locator("input");
@@ -1221,7 +1235,7 @@ test("radio disabled state", async ({ page }) => {
   await expect(f.getByTestId("radio-disabled")).toHaveAttribute("data-disabled", "true");
 });
 
-test("radio renders sm and lg sizes", async ({ page }) => {
+test("radio renders sm and lg sizes", async () => {
   await page.goto("/");
   const f = page.getByTestId("toggle-edge-fixture");
   await expect(f.getByTestId("radio-sm")).toHaveAttribute("data-size", "sm");
@@ -1231,7 +1245,7 @@ test("radio renders sm and lg sizes", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Collapsible edge cases (Collapsible does NOT forward data-testid)
 // ---------------------------------------------------------------------------
-test("collapsible defaultOpen=true shows content on SSR", async ({ page }) => {
+test("collapsible defaultOpen=true shows content on SSR", async () => {
   await page.goto("/");
   const f = page.getByTestId("collapsible-edge-fixture");
   // Find the first button with "Default open" text.
@@ -1240,7 +1254,7 @@ test("collapsible defaultOpen=true shows content on SSR", async ({ page }) => {
   await expect(f.getByText("Always visible content.")).toBeVisible();
 });
 
-test("collapsible disabled prevents toggle", async ({ page }) => {
+test("collapsible disabled prevents toggle", async () => {
   await page.goto("/");
   const f = page.getByTestId("collapsible-edge-fixture");
   const trigger = f.getByRole("button", { name: "Disabled" });
@@ -1250,7 +1264,7 @@ test("collapsible disabled prevents toggle", async ({ page }) => {
   await expect(trigger).toHaveAttribute("aria-expanded", "false");
 });
 
-test("collapsible toggle works", async ({ page }) => {
+test("collapsible toggle works", async () => {
   await page.goto("/");
   const f = page.getByTestId("collapsible-edge-fixture");
   // The third collapsible is "With callback" - use aria-expanded to verify toggle.
@@ -1265,7 +1279,7 @@ test("collapsible toggle works", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Dialog edge cases
 // ---------------------------------------------------------------------------
-test("dialog controlled: state tracks open/close", async ({ page }) => {
+test("dialog controlled: state tracks open/close", async () => {
   await page.goto("/");
   // Hydration duplicates <p> elements; use page-level selectors
   const state = page.locator('[data-testid="dialog-edge-state"]');
@@ -1280,7 +1294,7 @@ test("dialog controlled: state tracks open/close", async ({ page }) => {
   await expect(state.nth(1)).toHaveText("closed");
 });
 
-test("dialog aria-label renders on dialog role", async ({ page }) => {
+test("dialog aria-label renders on dialog role", async () => {
   await page.goto("/");
   await page.getByTestId("dialog-edge-open").click();
   // Dialog is portaled to body; find by aria-label directly
@@ -1290,7 +1304,7 @@ test("dialog aria-label renders on dialog role", async ({ page }) => {
   await page.getByTestId("dialog-edge-close").click();
 });
 
-test("dialog backdrop click closes", async ({ page }) => {
+test("dialog backdrop click closes", async () => {
   await page.goto("/");
   await page.getByTestId("dialog-edge-open").click();
   const content = page.getByTestId("dialog-edge-content");
@@ -1303,7 +1317,7 @@ test("dialog backdrop click closes", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Accordion edge cases (AccordionItem DOES forward data-testid)
 // ---------------------------------------------------------------------------
-test("accordion disabled item cannot be opened", async ({ page }) => {
+test("accordion disabled item cannot be opened", async () => {
   await page.goto("/");
   const f = page.getByTestId("accordion-edge-fixture");
   const trigger = f.getByTestId("acc-disabled").getByRole("button");
@@ -1312,12 +1326,12 @@ test("accordion disabled item cannot be opened", async ({ page }) => {
   await expect(f.getByTestId("acc-disabled").locator("[data-accordion-content]")).toBeHidden();
 });
 
-test("accordion item with trigger prop renders", async ({ page }) => {
+test("accordion item with trigger prop renders", async () => {
   await page.goto("/");
   await expect(page.getByTestId("accordion-edge-fixture").getByTestId("acc-subtitle")).toContainText("With subtitle");
 });
 
-test("accordion chevron rotates on toggle", async ({ page }) => {
+test("accordion chevron rotates on toggle", async () => {
   await page.goto("/");
   const f = page.getByTestId("accordion-edge-fixture");
   const item = f.getByTestId("acc-custom-chevron");
@@ -1330,13 +1344,13 @@ test("accordion chevron rotates on toggle", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Tabs edge cases (Tabs does NOT forward data-testid)
 // ---------------------------------------------------------------------------
-test("tabs ariaLabel is set on tablist", async ({ page }) => {
+test("tabs ariaLabel is set on tablist", async () => {
   await page.goto("/");
   const tablist = page.getByTestId("tabs-edge-fixture").locator("[role=tablist]");
   await expect(tablist).toHaveAttribute("aria-label", "Edge tabs");
 });
 
-test("tabs with 2 tabs works correctly", async ({ page }) => {
+test("tabs with 2 tabs works correctly", async () => {
   await page.goto("/");
   const f = page.getByTestId("tabs-edge-fixture");
   // Tabpanels have aria-labelledby pointing to tabs; use text content to locate
@@ -1352,7 +1366,7 @@ test("tabs with 2 tabs works correctly", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Pagination edge cases (Pagination DOES forward data-testid on nav)
 // ---------------------------------------------------------------------------
-test("pagination last page disables next button", async ({ page }) => {
+test("pagination last page disables next button", async () => {
   await page.goto("/");
   const f = page.getByTestId("pagination-edge-fixture");
   const nextBtn = f.getByRole("button", { name: "Next page" });
@@ -1366,7 +1380,7 @@ test("pagination last page disables next button", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // RadioGroup
 // ---------------------------------------------------------------------------
-test("radio group items are focusable", async ({ page }) => {
+test("radio group items are focusable", async () => {
   await page.goto("/");
   const medium = page.getByTestId("radiogroup-keyboard-fixture").getByRole("radio", { name: "Medium" });
   await medium.focus();
@@ -1376,7 +1390,7 @@ test("radio group items are focusable", async ({ page }) => {
 // ---------------------------------------------------------------------------
 // Cross-cutting
 // ---------------------------------------------------------------------------
-test("all new edge-case fixtures render from SSR", async ({ page }) => {
+test("all new edge-case fixtures render from SSR", async () => {
   await page.goto("/");
   for (const tid of [
     "button-edge-fixture", "input-edge-fixture", "select-edge-fixture",
@@ -1389,7 +1403,7 @@ test("all new edge-case fixtures render from SSR", async ({ page }) => {
   }
 });
 
-test("button focus-visible shows outline ring", async ({ page }) => {
+test("button focus-visible shows outline ring", async () => {
   await page.goto("/");
   const btn = page.getByTestId("button-fixture").getByTestId("btn-default");
   await btn.focus();
@@ -1398,7 +1412,7 @@ test("button focus-visible shows outline ring", async ({ page }) => {
   expect(outline).not.toBe("none");
 });
 
-test("sheet and dialog can both be triggered separately", async ({ page }) => {
+test("sheet and dialog can both be triggered separately", async () => {
   await page.goto("/");
   await page.getByTestId("dialog-fixture").getByTestId("dialog-open").click();
   await expect(page.getByTestId("dialog-content")).toBeVisible();
@@ -1410,7 +1424,7 @@ test("sheet and dialog can both be triggered separately", async ({ page }) => {
   await expect(page.getByRole("dialog")).toBeHidden();
 });
 
-test("counter works after toggling multiple components", async ({ page }) => {
+test("counter works after toggling multiple components", async () => {
   await page.goto("/");
   await page.getByTestId("toggle-fixture").getByTestId("checkbox-control").click();
   await page.getByTestId("tabs-fixture").getByRole("tab", { name: "Beta" }).click();
@@ -1421,7 +1435,7 @@ test("counter works after toggling multiple components", async ({ page }) => {
   await expect(page.getByTestId("counter-value")).toHaveText("Count: 2");
 });
 
-test("SSR HTML with all fixtures stays under 300KB", async ({ page }) => {
+test("SSR HTML with all fixtures stays under 300KB", async () => {
   await page.goto("/");
   const htmlSize = await page.evaluate(() => document.documentElement.outerHTML.length);
   expect(htmlSize).toBeLessThan(300_000);
@@ -1432,7 +1446,7 @@ test("SSR HTML with all fixtures stays under 300KB", async ({ page }) => {
 // UTILITY / LAYOUT COMPONENTS
 // ===========================================================================
 
-test("container renders sizes", async ({ page }) => {
+test("container renders sizes", async () => {
   await page.goto("/");
   const f = page.getByTestId("container-fixture");
   const sm = f.getByTestId("container-sm");
@@ -1450,7 +1464,7 @@ test("container renders sizes", async ({ page }) => {
   expect(fullBox).not.toBeNull();
 });
 
-test("stack renders directions", async ({ page }) => {
+test("stack renders directions", async () => {
   await page.goto("/");
   const f = page.getByTestId("stack-fixture");
   // Stack doesn't forward data-testid; find divs with chx-stack classes
@@ -1464,7 +1478,7 @@ test("stack renders directions", async ({ page }) => {
   expect(colStyle).toBe("column");
 });
 
-test("stack justify-between spaces children", async ({ page }) => {
+test("stack justify-between spaces children", async () => {
   await page.goto("/");
   const f = page.getByTestId("stack-fixture");
   const between = f.locator(".chx-stack-justify-between").first();
@@ -1473,7 +1487,7 @@ test("stack justify-between spaces children", async ({ page }) => {
   expect(justify).toBe("space-between");
 });
 
-test("grid renders columns", async ({ page }) => {
+test("grid renders columns", async () => {
   await page.goto("/");
   const f = page.getByTestId("grid-fixture");
   // Grid doesn't forward data-testid; find by the div child
@@ -1484,7 +1498,7 @@ test("grid renders columns", async ({ page }) => {
   await expect(cells).toHaveCount(3);
 });
 
-test("breadcrumbs renders navigation", async ({ page }) => {
+test("breadcrumbs renders navigation", async () => {
   await page.goto("/");
   const f = page.getByTestId("breadcrumbs-fixture");
   await expect(f.getByText("Home")).toBeVisible();
@@ -1499,7 +1513,7 @@ test("breadcrumbs renders navigation", async ({ page }) => {
   await expect(homeLink).toBeVisible();
 });
 
-test("divider renders between content", async ({ page }) => {
+test("divider renders between content", async () => {
   await page.goto("/");
   const f = page.getByTestId("divider-fixture");
   const hr = f.locator("hr");
@@ -1508,7 +1522,7 @@ test("divider renders between content", async ({ page }) => {
   await expect(f.getByText("Below")).toBeVisible();
 });
 
-test("kbd renders keyboard shortcuts", async ({ page }) => {
+test("kbd renders keyboard shortcuts", async () => {
   await page.goto("/");
   const f = page.getByTestId("kbd-fixture");
   const ctrl = f.getByTestId("kbd-ctrl");
@@ -1518,7 +1532,7 @@ test("kbd renders keyboard shortcuts", async ({ page }) => {
   await expect(ctrl).toHaveJSProperty("tagName", "KBD");
 });
 
-test("skeleton renders with sizes and circle", async ({ page }) => {
+test("skeleton renders with sizes and circle", async () => {
   await page.goto("/");
   const f = page.getByTestId("skeleton-fixture");
   // Skeleton doesn't forward data-testid; find span children
@@ -1535,7 +1549,7 @@ test("skeleton renders with sizes and circle", async ({ page }) => {
   expect(Math.abs(circleBox!.width - circleBox!.height)).toBeLessThan(2);
 });
 
-test("spinner renders with sizes", async ({ page }) => {
+test("spinner renders with sizes", async () => {
   await page.goto("/");
   const f = page.getByTestId("spinner-fixture");
   // Spinner doesn't forward data-testid; find span[role=status] children
@@ -1549,7 +1563,7 @@ test("spinner renders with sizes", async ({ page }) => {
   expect(smBox!.width).toBeLessThan(lgBox!.width);
 });
 
-test("spinner has aria-label", async ({ page }) => {
+test("spinner has aria-label", async () => {
   await page.goto("/");
   const f = page.getByTestId("spinner-fixture");
   const spinners = f.locator("span[role='status']");
@@ -1563,7 +1577,7 @@ test("spinner has aria-label", async ({ page }) => {
 // SURFACE COMPONENTS
 // ===========================================================================
 
-test("paper renders with border and shadow", async ({ page }) => {
+test("paper renders with border and shadow", async () => {
   await page.goto("/");
   const paper = page.getByTestId("paper-fixture").getByTestId("paper");
   await expect(paper).toBeVisible();
@@ -1572,7 +1586,7 @@ test("paper renders with border and shadow", async ({ page }) => {
   expect(tag).not.toBe("0px");
 });
 
-test("appbar renders as header", async ({ page }) => {
+test("appbar renders as header", async () => {
   await page.goto("/");
   const bar = page.getByTestId("appbar-fixture").getByTestId("appbar");
   await expect(bar).toBeVisible();
@@ -1580,14 +1594,14 @@ test("appbar renders as header", async ({ page }) => {
   await expect(bar).toContainText("Nav");
 });
 
-test("drawer renders aside content", async ({ page }) => {
+test("drawer renders aside content", async () => {
   await page.goto("/");
   const drawer = page.getByTestId("drawer-fixture").getByTestId("drawer");
   await expect(drawer).toBeVisible();
   await expect(drawer).toContainText("Drawer content");
 });
 
-test("snackbar renders status message", async ({ page }) => {
+test("snackbar renders status message", async () => {
   await page.goto("/");
   const snackbar = page.getByTestId("snackbar-fixture").getByTestId("snackbar");
   await expect(snackbar).toBeVisible();
@@ -1595,14 +1609,14 @@ test("snackbar renders status message", async ({ page }) => {
   await expect(snackbar).toHaveAttribute("role", "status");
 });
 
-test("icon renders styled icon", async ({ page }) => {
+test("icon renders styled icon", async () => {
   await page.goto("/");
   const icon = page.getByTestId("icon-fixture").getByTestId("icon");
   await expect(icon).toBeVisible();
   await expect(icon).toContainText("A");
 });
 
-test("bottombar renders navigation bar", async ({ page }) => {
+test("bottombar renders navigation bar", async () => {
   await page.goto("/");
   const bar = page.getByTestId("bottombar-fixture").getByTestId("bottombar");
   await expect(bar).toBeVisible();
@@ -1610,14 +1624,14 @@ test("bottombar renders navigation bar", async ({ page }) => {
   await expect(bar).toContainText("Right");
 });
 
-test("empty state renders placeholder", async ({ page }) => {
+test("empty state renders placeholder", async () => {
   await page.goto("/");
   const empty = page.getByTestId("emptystate-fixture").getByTestId("emptystate");
   await expect(empty).toBeVisible();
   await expect(empty).toContainText("No data found");
 });
 
-test("stat card renders metric", async ({ page }) => {
+test("stat card renders metric", async () => {
   await page.goto("/");
   const card = page.getByTestId("statcard-fixture").getByTestId("statcard");
   await expect(card).toBeVisible();
@@ -1629,7 +1643,7 @@ test("stat card renders metric", async ({ page }) => {
 // MISSING PARAMETER TESTS
 // ===========================================================================
 
-test("toast persistent from params fixture stays visible", async ({ page }) => {
+test("toast persistent from params fixture stays visible", async () => {
   await page.goto("/");
   const toast = page.getByTestId("toast-params-fixture").getByTestId("toast-nodismiss");
   await expect(toast).toBeVisible();
@@ -1638,21 +1652,21 @@ test("toast persistent from params fixture stays visible", async ({ page }) => {
   await expect(toast).toBeVisible();
 });
 
-test("toast params fixture has role=status", async ({ page }) => {
+test("toast params fixture has role=status", async () => {
   await page.goto("/");
   const toast = page.getByTestId("toast-params-fixture").getByTestId("toast-nodismiss");
   await expect(toast).toHaveAttribute("role", "status");
   await expect(toast).toContainText("Persistent");
 });
 
-test("toast params fixture action slot renders", async ({ page }) => {
+test("toast params fixture action slot renders", async () => {
   await page.goto("/");
   const toast = page.getByTestId("toast-params-fixture").getByTestId("toast-action");
   await expect(toast).toContainText("Action toast");
   await expect(toast).toContainText("Undo");
 });
 
-test("toast params fixture title-only and description-only render", async ({ page }) => {
+test("toast params fixture title-only and description-only render", async () => {
   await page.goto("/");
   const f = page.getByTestId("toast-params-fixture");
   const titleOnly = f.getByTestId("toast-withtitle");
@@ -1661,7 +1675,7 @@ test("toast params fixture title-only and description-only render", async ({ pag
   await expect(descOnly).toContainText("Description only");
 });
 
-test("toast params fixture close button works", async ({ page }) => {
+test("toast params fixture close button works", async () => {
   await page.goto("/");
   const toast = page.getByTestId("toast-params-fixture").getByTestId("toast-nodismiss");
   const closeBtn = toast.getByRole("button", { name: "Close" });
@@ -1670,7 +1684,7 @@ test("toast params fixture close button works", async ({ page }) => {
   await expect(toast).toBeHidden();
 });
 
-test("sheet left side opens and closes", async ({ page }) => {
+test("sheet left side opens and closes", async () => {
   await page.goto("/");
   const f = page.getByTestId("sheet-side-fixture");
   await f.getByTestId("sheet-open-left").click();
@@ -1681,7 +1695,7 @@ test("sheet left side opens and closes", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
-test("sheet top side opens and closes", async ({ page }) => {
+test("sheet top side opens and closes", async () => {
   await page.goto("/");
   const f = page.getByTestId("sheet-side-fixture");
   await f.getByTestId("sheet-open-top").click();
@@ -1692,7 +1706,7 @@ test("sheet top side opens and closes", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
-test("sheet bottom side opens and closes", async ({ page }) => {
+test("sheet bottom side opens and closes", async () => {
   await page.goto("/");
   const f = page.getByTestId("sheet-side-fixture");
   await f.getByTestId("sheet-open-bottom").click();
@@ -1703,7 +1717,7 @@ test("sheet bottom side opens and closes", async ({ page }) => {
   await expect(dialog).toBeHidden();
 });
 
-test("dialog controlled mode opens and closes", async ({ page }) => {
+test("dialog controlled mode opens and closes", async () => {
   await page.goto("/");
   const f = page.getByTestId("dialog-defaultopen-fixture");
   await f.getByTestId("dialog-auto-open").click();
@@ -1719,7 +1733,7 @@ test("dialog controlled mode opens and closes", async ({ page }) => {
 // CONTROLLED MODE TESTS
 // ===========================================================================
 
-test("toggle group controlled mode: parent drives selection", async ({ page }) => {
+test("toggle group controlled mode: parent drives selection", async () => {
   await page.goto("/");
   const f = page.getByTestId("togglegroup-controlled-fixture");
   const bold = f.getByRole("button", { name: "Bold" });
@@ -1732,7 +1746,7 @@ test("toggle group controlled mode: parent drives selection", async ({ page }) =
   await expect(italic).toHaveAttribute("aria-pressed", "true");
 });
 
-test("radio group controlled mode: clicking updates parent", async ({ page }) => {
+test("radio group controlled mode: clicking updates parent", async () => {
   await page.goto("/");
   const f = page.getByTestId("radiogroup-controlled-fixture");
   const large = f.getByRole("radio", { name: "Large" });
@@ -1742,7 +1756,7 @@ test("radio group controlled mode: clicking updates parent", async ({ page }) =>
   await expect(large).toBeChecked();
 });
 
-test("collapsible controlled mode: external button toggles", async ({ page }) => {
+test("collapsible controlled mode: external button toggles", async () => {
   await page.goto("/");
   const f = page.getByTestId("collapsible-controlled-fixture");
   const toggle = f.getByTestId("collapsible-ctrl-toggle");
@@ -1758,7 +1772,7 @@ test("collapsible controlled mode: external button toggles", async ({ page }) =>
 // TOGGLE SIZES + VARIANTS
 // ===========================================================================
 
-test("checkbox and switch render sm/lg sizes", async ({ page }) => {
+test("checkbox and switch render sm/lg sizes", async () => {
   await page.goto("/");
   const f = page.getByTestId("toggle-sizes-fixture");
   // All should render
@@ -1773,7 +1787,7 @@ test("checkbox and switch render sm/lg sizes", async ({ page }) => {
   await expect(f.getByTestId("sw-lg")).toHaveAttribute("data-size", "lg");
 });
 
-test("toggle group outline variant group renders", async ({ page }) => {
+test("toggle group outline variant group renders", async () => {
   await page.goto("/");
   const f = page.getByTestId("togglegroup-variants-fixture");
   // ToggleGroupItem reads variant from its own props (not group's),
@@ -1784,7 +1798,7 @@ test("toggle group outline variant group renders", async ({ page }) => {
   await expect(a).toContainText("A");
 });
 
-test("toggle group ghost variant group renders", async ({ page }) => {
+test("toggle group ghost variant group renders", async () => {
   await page.goto("/");
   const f = page.getByTestId("togglegroup-variants-fixture");
   const x = f.getByTestId("tgi-ghost-x");
@@ -1796,7 +1810,7 @@ test("toggle group ghost variant group renders", async ({ page }) => {
 // TEXT POLYMORPHIC
 // ===========================================================================
 
-test("text renders as p, span, div", async ({ page }) => {
+test("text renders as p, span, div", async () => {
   await page.goto("/");
   const f = page.getByTestId("text-polymorphic-fixture");
   // Text component doesn't forward data-testid; use text content
@@ -1816,7 +1830,7 @@ test("text renders as p, span, div", async ({ page }) => {
 // DARK MODE
 // ===========================================================================
 
-test("dark mode theme tokens are applied", async ({ page }) => {
+test("dark mode theme tokens are applied", async () => {
   await page.goto("/");
   // The page renders with class="chx-default dark" on <html>
   const htmlClass = await page.locator("html").getAttribute("class");
@@ -1829,7 +1843,7 @@ test("dark mode theme tokens are applied", async ({ page }) => {
   expect(bgColor).toContain("240");
 });
 
-test("dark mode card renders with theme variables", async ({ page }) => {
+test("dark mode card renders with theme variables", async () => {
   await page.goto("/");
   const card = page.getByTestId("darkmode-fixture").getByTestId("darkmode-card");
   await expect(card).toBeVisible();
@@ -1842,7 +1856,7 @@ test("dark mode card renders with theme variables", async ({ page }) => {
 // ===========================================================================
 // REGRESSION: all new fixtures render from SSR
 // ===========================================================================
-test("all new utility/surface fixtures render from SSR", async ({ page }) => {
+test("all new utility/surface fixtures render from SSR", async () => {
   await page.goto("/");
   for (const tid of [
     "container-fixture", "stack-fixture", "grid-fixture", "breadcrumbs-fixture",
@@ -1856,4 +1870,7 @@ test("all new utility/surface fixtures render from SSR", async ({ page }) => {
   ]) {
     await expect(page.locator(`[data-testid="${tid}"]`)).toBeAttached();
   }
+});
+
+
 });

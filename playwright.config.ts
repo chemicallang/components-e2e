@@ -6,9 +6,10 @@ const BASE_URL = `http://127.0.0.1:${PORT}`;
 
 export default defineConfig({
   testDir: "./tests",
-  // Fully parallel is safe here: each test loads the page fresh (state lives
-  // server-side only at SSR time; client state resets on navigation).
-  fullyParallel: true,
+  // Serial execution: tests share a page per file via beforeAll to avoid
+  // creating a new browser context for every test.
+  fullyParallel: false,
+  workers: 1,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : [["list"]],
@@ -26,7 +27,7 @@ export default defineConfig({
       name: "chromium",
       use: {
         browserName: "chromium",
-        ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}),
+        channel: process.env.PLAYWRIGHT_CHANNEL || "chrome",
       },
     },
   ],
