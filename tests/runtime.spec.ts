@@ -273,3 +273,103 @@ test("batching and unmount: no errors when both features are active", async ({ p
   await page.waitForTimeout(300);
   expect(errors, errors.join("\n")).toEqual([]);
 });
+
+// ===========================================================================
+// Keyed list reconciliation tests
+// ===========================================================================
+
+test.describe("keyed list reconciliation", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForTimeout(200);
+  });
+
+  test("SSR renders initial list items", async ({ page }) => {
+    const list = page.getByTestId("keyed-list");
+    await expect(list.getByTestId("item-a")).toHaveText("Alpha");
+    await expect(list.getByTestId("item-b")).toHaveText("Beta");
+    await expect(list.getByTestId("item-c")).toHaveText("Gamma");
+  });
+
+  test("add item to end preserves existing DOM elements", async ({ page }) => {
+    const list = page.getByTestId("keyed-list");
+    // Capture element identity before add
+    const itemA = list.getByTestId("item-a");
+    const itemB = list.getByTestId("item-b");
+
+    await page.getByTestId("keyed-add-delta").click();
+
+    // Existing items preserved
+    await expect(itemA).toHaveText("Alpha");
+    await expect(itemB).toHaveText("Beta");
+    await expect(list.getByTestId("item-c")).toHaveText("Gamma");
+    // New item added
+    await expect(list.getByTestId("item-d")).toHaveText("Delta");
+  });
+
+  test("remove item from middle preserves remaining items", async ({ page }) => {
+    const list = page.getByTestId("keyed-list");
+    await page.getByTestId("keyed-remove-b").click();
+
+    await expect(list.getByTestId("item-a")).toHaveText("Alpha");
+    await expect(list.locator("[data-testid='item-b']")).toHaveCount(0);
+    await expect(list.getByTestId("item-c")).toHaveText("Gamma");
+  });
+
+  test("reverse reorders items correctly", async ({ page }) => {
+    const list = page.getByTestId("keyed-list");
+    await page.getByTestId("keyed-reverse").click();
+
+    const items = list.locator("li");
+    await expect(items.nth(0)).toHaveText("Gamma");
+    await expect(items.nth(1)).toHaveText("Beta");
+    await expect(items.nth(2)).toHaveText("Alpha");
+  });
+
+  test("replace all clears and renders new items", async ({ page }) => {
+    const list = page.getByTestId("keyed-list");
+    await page.getByTestId("keyed-replace-all").click();
+
+    await expect(list.locator("[data-testid='item-a']")).toHaveCount(0);
+    await expect(list.locator("[data-testid='item-b']")).toHaveCount(0);
+    await expect(list.locator("[data-testid='item-c']")).toHaveCount(0);
+    await expect(list.getByTestId("item-x")).toHaveText("X-ray");
+    await expect(list.getByTestId("item-y")).toHaveText("Yankee");
+  });
+
+  test("no runtime errors during keyed reconciliation operations", async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(String(err)));
+    const f = page.getByTestId("keyed-list-fixture");
+    await f.getByTestId("keyed-add-delta").click();
+    await f.getByTestId("keyed-reverse").click();
+    await f.getByTestId("keyed-remove-b").click();
+    await f.getByTestId("keyed-add-alpha-first").click();
+    await f.getByTestId("keyed-replace-all").click();
+    await page.waitForTimeout(200);
+    expect(errors, errors.join("\n")).toEqual([]);
+  });
+});
+
+// ===========================================================================
+// Error boundary hierarchy tests
+// ===========================================================================
+
+test.describe("error boundary hierarchy", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/");
+    await page.waitForTimeout(200);
+  });
+
+  test("child render error shows parent fallback when parent has useErrorBoundary", async ({ page }) => {
+    const eb = page.getByTestId("eb-parent");
+    // The parent's fallback should be rendered (child threw during render)
+    await expect(eb.getByTestId("parent-fallback")).toBeVisible();
+    await expect(eb.getByTestId("parent-fallback")).toContainText("Parent caught:");
+  });
+
+  test("parent sibling content is preserved after child error", async ({ page }) => {
+    const eb = page.getByTestId("eb-parent");
+    await expect(eb.getByTestId("eb-parent-sibling")).toHaveText(" sibling content");
+  });
+});

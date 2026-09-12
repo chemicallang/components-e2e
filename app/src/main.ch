@@ -1049,6 +1049,46 @@
     </div>
 }
 
+#universal KeyedListFixture(props) {
+    state items = [{id: "a", label: "Alpha"}, {id: "b", label: "Beta"}, {id: "c", label: "Gamma"}]
+    return <div data-testid="keyed-list-fixture">
+        <ul data-testid="keyed-list">
+            {items.map(item => <li key={item.id} data-testid={"item-" + item.id}>{item.label}</li>)}
+        </ul>
+        <Button data-testid="keyed-add-delta" onClick={() => {
+            items = [...items, {id: "d", label: "Delta"}]
+        }}>Add Delta</Button>
+        <Button data-testid="keyed-add-alpha-first" onClick={() => {
+            items = [{id: "z", label: "Zeta"}, ...items]
+        }}>Add Zeta First</Button>
+        <Button data-testid="keyed-remove-b" onClick={() => {
+            items = items.filter(item => item.id != "b")
+        }}>Remove Beta</Button>
+        <Button data-testid="keyed-reverse" onClick={() => {
+            items = [...items].reverse()
+        }}>Reverse</Button>
+        <Button data-testid="keyed-replace-all" onClick={() => {
+            items = [{id: "x", label: "X-ray"}, {id: "y", label: "Yankee"}]
+        }}>Replace All</Button>
+    </div>
+}
+
+#universal ErrorBoundaryChildFixture(props) {
+    useErrorBoundary((p, err) => {
+        return <div data-testid="parent-fallback">Parent caught: {err.message}</div>
+    })
+    return <div data-testid="eb-parent">
+        <ErrorBoundaryThrowingChild />
+        <span data-testid="eb-parent-sibling"> sibling content</span>
+    </div>
+}
+
+#universal ErrorBoundaryThrowingChild(props) {
+    var x = null
+    x.field
+    return <span>should not render</span>
+}
+
 public func main() : int {
     var page = HtmlPage()
     page.appendTitle("Components E2E")
@@ -1134,6 +1174,8 @@ public func main() : int {
             <DarkModeFixture />
             <BatchingFixture />
             <UnmountCleanupFixture />
+            <KeyedListFixture />
+            <ErrorBoundaryChildFixture />
         </main>
     }
 
