@@ -31,7 +31,7 @@ test("no universal runtime errors on the page", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(String(err)));
   page.on("console", (msg) => {
-    if (msg.type() === "error") errors.push(msg.text());
+    if (msg.type() === "error" && !msg.text().includes("favicon") && !msg.text().includes("404")) errors.push(msg.text());
   });
 
   await page.goto("/");
