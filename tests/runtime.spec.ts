@@ -279,8 +279,63 @@ test.describe.serial("Runtime", () => {
   });
 
   // ===========================================================================
+  // Effect dependency semantics
+  // ===========================================================================
+
+  test("effect deps: unrelated state change does not re-run effect", async () => {
+    await page.goto("/");
+    const f = page.getByTestId("effect-deps-fixture");
+
+    // Effect runs once on mount.
+    await expect(f.getByTestId("ed-runs")).toHaveText("1");
+
+    // Changing state the effect does NOT depend on must not re-run it.
+    await f.getByTestId("ed-inc-unrelated").click();
+    await expect(f.getByTestId("ed-unrelated")).toHaveText("1");
+    await expect(f.getByTestId("ed-runs")).toHaveText("1");
+
+    // Changing the declared dep must re-run it exactly once.
+    await f.getByTestId("ed-inc-count").click();
+    await expect(f.getByTestId("ed-count")).toHaveText("1");
+    await expect(f.getByTestId("ed-runs")).toHaveText("2");
+  });
+
+  // ===========================================================================
   // Keyed list reconciliation tests
   // ===========================================================================
+
+  test("keyed list: hydration adopts SSR nodes without removing them", async () => {
+    // Install the observer before any page script runs, then count removals of
+    // keyed list items during hydration. Adoption must not destroy SSR nodes.
+    const ctx = await page.context().browser()!.newContext();
+    const p = await ctx.newPage();
+    await p.addInitScript(() => {
+      (window as any).__removedItems = 0;
+      const obs = new MutationObserver((muts) => {
+        for (const m of muts) {
+          m.removedNodes.forEach((n) => {
+            const el = n as Element;
+            if (
+              el &&
+              el.nodeType === 1 &&
+              typeof el.matches === "function" &&
+              el.matches('li[data-testid^="item-"]')
+            ) {
+              (window as any).__removedItems++;
+            }
+          });
+        }
+      });
+      const start = () => obs.observe(document.documentElement, { childList: true, subtree: true });
+      if (document.documentElement) start();
+      else document.addEventListener("DOMContentLoaded", start);
+    });
+    await p.goto("/");
+    await p.waitForTimeout(400);
+    const removed = await p.evaluate(() => (window as any).__removedItems);
+    await ctx.close();
+    expect(removed).toBe(0);
+  });
 
   test("keyed list: SSR renders initial list items", async () => {
     await page.goto("/");

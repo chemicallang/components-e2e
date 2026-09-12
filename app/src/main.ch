@@ -1049,6 +1049,26 @@
     </div>
 }
 
+// ---------------------------------------------------------------------------
+// Effect dependency semantics: an effect must re-run only when one of its deps
+// actually changes, never on unrelated instance state updates.
+// ---------------------------------------------------------------------------
+#universal EffectDepsFixture(props) {
+    state count = 0
+    state unrelated = 0
+    state effectRuns = 0
+    useEffect(() => {
+        effectRuns = effectRuns + 1
+    }, [count])
+    return <div data-testid="effect-deps-fixture">
+        <p data-testid="ed-count">{count}</p>
+        <p data-testid="ed-unrelated">{unrelated}</p>
+        <p data-testid="ed-runs">{effectRuns}</p>
+        <button data-testid="ed-inc-count" onClick={() => count = count + 1}>inc count</button>
+        <button data-testid="ed-inc-unrelated" onClick={() => unrelated = unrelated + 1}>inc unrelated</button>
+    </div>
+}
+
 #universal KeyedListFixture(props) {
     state items = [{id: "a", label: "Alpha"}, {id: "b", label: "Beta"}, {id: "c", label: "Gamma"}]
     return <div data-testid="keyed-list-fixture">
@@ -1230,6 +1250,7 @@ public func main() : int {
             <DarkModeFixture />
             <BatchingFixture />
             <UnmountCleanupFixture />
+            <EffectDepsFixture />
             <KeyedListFixture />
             <ErrorBoundaryChildFixture />
             <MemoFixture />
