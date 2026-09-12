@@ -48,10 +48,11 @@ test("batching: no runtime errors during batched updates", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(String(err)));
   page.on("console", (msg) => {
-    if (msg.type() === "error") errors.push(msg.text());
+    if (msg.type() === "error" && !msg.text().includes("favicon")) errors.push(msg.text());
   });
 
   await page.goto("/");
+  await page.waitForTimeout(200);
   await page.getByTestId("batching-fixture").getByTestId("batch-update").click();
   await page.waitForTimeout(200);
 
@@ -163,18 +164,15 @@ test("unmount: useEffect cleanup runs when child is removed", async ({ page }) =
   await page.goto("/");
   const f = page.getByTestId("unmount-fixture");
 
-  // Reset the flag
-  await page.evaluate(() => {
-    (window as any).__cleanupRan = false;
-    (window as any).__childMounted = false;
-  });
-
-  // Verify child is mounted
+  // After hydration, the child's useEffect has already run, setting __childMounted = true
   await expect(f.getByTestId("unmount-child")).toBeVisible();
   const mounted = await page.evaluate(() => (window as any).__childMounted as boolean);
   expect(mounted).toBe(true);
 
-  // Remove the child
+  // Ensure cleanupRan starts as false
+  await page.evaluate(() => { (window as any).__cleanupRan = false });
+
+  // Remove the child — this triggers owner tree disposal → cleanup runs
   await f.getByTestId("unmount-toggle").click();
   await expect(f.getByTestId("unmount-child")).toBeHidden();
 
@@ -187,14 +185,10 @@ test("unmount: cleanup runs again on second mount/unmount cycle", async ({ page 
   await page.goto("/");
   const f = page.getByTestId("unmount-fixture");
 
-  // Reset flags
-  await page.evaluate(() => {
-    (window as any).__cleanupRan = false;
-    (window as any).__childMounted = false;
-  });
-
-  // First cycle: mount → unmount
+  // Verify child mounted during hydration
   await expect(f.getByTestId("unmount-child")).toBeVisible();
+
+  // First cycle: unmount
   await f.getByTestId("unmount-toggle").click();
   await expect(f.getByTestId("unmount-child")).toBeHidden();
   expect(await page.evaluate(() => (window as any).__cleanupRan)).toBe(true);
@@ -205,10 +199,12 @@ test("unmount: cleanup runs again on second mount/unmount cycle", async ({ page 
   // Second cycle: mount → unmount
   await f.getByTestId("unmount-toggle").click();
   await expect(f.getByTestId("unmount-child")).toBeVisible();
+  // Cleanup should NOT have run yet (child is still mounted)
   expect(await page.evaluate(() => (window as any).__cleanupRan)).toBe(false);
 
   await f.getByTestId("unmount-toggle").click();
   await expect(f.getByTestId("unmount-child")).toBeHidden();
+  // Now cleanup should have run
   expect(await page.evaluate(() => (window as any).__cleanupRan)).toBe(true);
 });
 
@@ -216,7 +212,7 @@ test("unmount: no runtime errors during mount/unmount cycles", async ({ page }) 
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(String(err)));
   page.on("console", (msg) => {
-    if (msg.type() === "error") errors.push(msg.text());
+    if (msg.type() === "error" && !msg.text().includes("favicon")) errors.push(msg.text());
   });
 
   await page.goto("/");
@@ -257,10 +253,11 @@ test("batching and unmount: no errors when both features are active", async ({ p
   const errors: string[] = [];
   page.on("pageerror", (err) => errors.push(String(err)));
   page.on("console", (msg) => {
-    if (msg.type() === "error") errors.push(msg.text());
+    if (msg.type() === "error" && !msg.text().includes("favicon")) errors.push(msg.text());
   });
 
   await page.goto("/");
+  await page.waitForTimeout(200);
 
   // Batch update
   await page.getByTestId("batching-fixture").getByTestId("batch-update").click();

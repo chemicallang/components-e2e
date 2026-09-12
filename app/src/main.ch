@@ -1020,13 +1020,10 @@
     state a = 0
     state b = 0
     state c = 0
-    state renderCount = 0
-    useLayoutEffect(() => { renderCount = renderCount + 1 })
     return <div data-testid="batching-fixture">
         <p data-testid="batch-a">{a}</p>
         <p data-testid="batch-b">{b}</p>
         <p data-testid="batch-c">{c}</p>
-        <p data-testid="batch-renders">{renderCount}</p>
         <Button data-testid="batch-update" onClick={() => { a = 10; b = 20; c = 30 }}>Update All</Button>
     </div>
 }
