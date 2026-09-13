@@ -225,4 +225,33 @@ test.describe.serial("Runtime unit", () => {
     });
     expect(result.threw).toBe(false);
   });
+
+  test("$__uni_hydrate_node: splits a merged SSR text node instead of overwriting", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const parent = document.createElement("div");
+      // The HTML parser merges adjacent server text nodes, so one node can hold
+      // several client text vnodes' worth of text.
+      parent.appendChild(document.createTextNode("    "));
+      let cursor = w.$__uni_hydrate_node(parent, parent.firstChild, "  ");
+      cursor = w.$__uni_hydrate_node(parent, cursor, "  ");
+      return { text: parent.textContent, nodes: parent.childNodes.length };
+    });
+    expect(result.text).toBe("    ");
+    expect(result.nodes).toBe(2);
+  });
+
+  test("$__uni_html: hydration consumes its server node count so siblings align", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const parent = document.createElement("div");
+      const a = document.createElement("span"); a.textContent = "a";
+      const b = document.createElement("span"); b.textContent = "b";
+      parent.appendChild(a); parent.appendChild(b);
+      const blob = w.$__uni_html("<span>a</span>", 1);
+      const next = w.$__uni_hydrate_node(parent, a, blob);
+      return { nextIsB: next === b };
+    });
+    expect(result.nextIsB).toBe(true);
+  });
 });
