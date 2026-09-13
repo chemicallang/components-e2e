@@ -1219,6 +1219,12 @@
     </div>
 }
 
+// Host for directly-passed static children (exercises the html_cbi client-vnode
+// child path; no SSR HTML should be transported through JS for these children).
+#universal StaticChildrenHost(props) {
+    return <section data-testid="static-children-host">{props.children}</section>
+}
+
 public func main() : int {
     var page = HtmlPage()
     page.appendTitle("Components E2E")
@@ -1313,6 +1319,10 @@ public func main() : int {
             <SvgFixture />
             <RefForwardingFixture />
             <RootShapesFixture />
+            <StaticChildrenHost>
+                <span data-testid="sc-child">hello</span>
+                <em data-testid="sc-child2" data-n="2">world</em>
+            </StaticChildrenHost>
         </main>
     }
 

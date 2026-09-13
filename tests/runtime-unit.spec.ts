@@ -207,4 +207,22 @@ test.describe.serial("Runtime unit", () => {
     });
     expect(result).toEqual({ eq: true, neq: false, len: false });
   });
+
+  test("$__uni_dispatch: a missing target does not throw (must not abort later hydration)", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      let threw = false;
+      try {
+        // Simulates a dispatch whose boundary element was never server-rendered.
+        // Dispatches are sequential statements, so throwing here would stop every
+        // later component from hydrating (the root cause of many "nothing works"
+        // docs-page bugs).
+        w.$__uni_dispatch("components_DoesNotExist", null, {});
+      } catch (e) {
+        threw = true;
+      }
+      return { threw };
+    });
+    expect(result.threw).toBe(false);
+  });
 });
