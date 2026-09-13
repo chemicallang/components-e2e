@@ -170,6 +170,27 @@
 }
 
 // ---------------------------------------------------------------------------
+// ToggleGroup scoping: two UNNAMED groups must keep independent selection
+// (previously they shared one global context entry keyed "tg-default").
+// ---------------------------------------------------------------------------
+#universal ToggleGroupScopedFixture(props) {
+    return <div data-testid="togglegroup-scoped-fixture">
+        <div data-testid="tgs-a">
+            <ToggleGroup type="single" defaultValue="Bold">
+                <ToggleGroupItem value="Bold">A-Bold</ToggleGroupItem>
+                <ToggleGroupItem value="Italic">A-Italic</ToggleGroupItem>
+            </ToggleGroup>
+        </div>
+        <div data-testid="tgs-b">
+            <ToggleGroup type="single" defaultValue="Italic">
+                <ToggleGroupItem value="Bold">B-Bold</ToggleGroupItem>
+                <ToggleGroupItem value="Italic">B-Italic</ToggleGroupItem>
+            </ToggleGroup>
+        </div>
+    </div>
+}
+
+// ---------------------------------------------------------------------------
 // RadioGroup (children mode)
 // ---------------------------------------------------------------------------
 #universal RadioGroupFixture(props) {
@@ -1247,6 +1268,7 @@ public func main() : int {
             <ToggleFixture />
             <ToggleGroupFixture />
             <ToggleGroupMultipleFixture />
+            <ToggleGroupScopedFixture />
             <RadioGroupFixture />
             <RadioGroupNoProviderFixture />
             <ToastFixture />

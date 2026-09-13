@@ -326,6 +326,35 @@ test("toggle group multiple mode", async () => {
 });
 
 // ---------------------------------------------------------------------------
+// ToggleGroup scoping (two unnamed groups must not share context state)
+// ---------------------------------------------------------------------------
+test("toggle group scoping: two unnamed groups keep independent selection", async () => {
+  await page.goto("/");
+  const f = page.getByTestId("togglegroup-scoped-fixture");
+  const a = f.getByTestId("tgs-a");
+  const b = f.getByTestId("tgs-b");
+  const aBold = a.getByRole("button", { name: "A-Bold" });
+  const aItalic = a.getByRole("button", { name: "A-Italic" });
+  const bBold = b.getByRole("button", { name: "B-Bold" });
+  const bItalic = b.getByRole("button", { name: "B-Italic" });
+  // Initial defaults are independent.
+  await expect(aBold).toHaveAttribute("aria-pressed", "true");
+  await expect(aItalic).toHaveAttribute("aria-pressed", "false");
+  await expect(bItalic).toHaveAttribute("aria-pressed", "true");
+  await expect(bBold).toHaveAttribute("aria-pressed", "false");
+  // Selecting in group A must not affect group B.
+  await aItalic.click();
+  await expect(aItalic).toHaveAttribute("aria-pressed", "true");
+  await expect(aBold).toHaveAttribute("aria-pressed", "false");
+  await expect(bItalic).toHaveAttribute("aria-pressed", "true");
+  // Selecting in group B must not affect group A.
+  await bBold.click();
+  await expect(bBold).toHaveAttribute("aria-pressed", "true");
+  await expect(bItalic).toHaveAttribute("aria-pressed", "false");
+  await expect(aItalic).toHaveAttribute("aria-pressed", "true");
+});
+
+// ---------------------------------------------------------------------------
 // RadioGroup
 // ---------------------------------------------------------------------------
 test("radio group selects single option", async () => {
@@ -766,10 +795,20 @@ test("tooltip bottom position", async () => {
   await page.goto("/");
   const f = page.getByTestId("tooltip-fixture");
   // Hover the second button (bottom tooltip).
-  await f.locator("button").nth(1).hover();
+  const trigger = f.locator("button").nth(1);
+  await trigger.hover();
   const tips = f.getByRole("tooltip");
-  // The second tooltip should be visible.
-  await expect(tips.nth(1)).toContainText("Bottom tip");
+  const tip = tips.nth(1);
+  await expect(tip).toContainText("Bottom tip");
+  await expect(tip).toHaveCSS("opacity", "1");
+  // The `position="bottom"` prop must actually place the tip below the trigger.
+  const triggerBox = await trigger.boundingBox();
+  const tipBox = await tip.boundingBox();
+  expect(triggerBox).not.toBeNull();
+  expect(tipBox).not.toBeNull();
+  expect(tipBox!.y).toBeGreaterThanOrEqual(
+    triggerBox!.y + triggerBox!.height - 1,
+  );
 });
 
 // ===========================================================================

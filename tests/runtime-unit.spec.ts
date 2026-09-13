@@ -163,6 +163,78 @@ test.describe.serial("Runtime unit", () => {
     expect(result).toEqual(["a:A", "c:C"]);
   });
 
+  test("$__uni_reconcile_list: keyed matching works when the first item is unkeyed", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const ul = document.createElement("ul");
+      document.body.appendChild(ul);
+      const start = document.createComment("s");
+      const end = document.createComment("e");
+      ul.appendChild(start);
+      ul.appendChild(end);
+      const mk = (k: string, label: string) => ({ t: "li", p: { key: k }, c: [label] });
+      const header = (label: string) => ({ t: "li", p: {}, c: [label] });
+      let tracked = w.$__uni_reconcile_list(start, end, [header("H"), mk("a", "A")], null);
+      let nodeA: any = null;
+      let n = start.nextSibling;
+      while (n && n !== end) { if (n.__uni_vnode_key === "a") nodeA = n; n = n.nextSibling; }
+      tracked = w.$__uni_reconcile_list(start, end, [header("H2"), mk("a", "A2")], tracked);
+      let nodeA2: any = null;
+      let m = start.nextSibling;
+      while (m && m !== end) { if (m.__uni_vnode_key === "a") nodeA2 = m; m = m.nextSibling; }
+      const out = { identity: nodeA === nodeA2, text: nodeA2 ? nodeA2.textContent : null };
+      ul.remove();
+      return out;
+    });
+    expect(result).toEqual({ identity: true, text: "A2" });
+  });
+
+  test("$__uni_reconcile_list: unkeyed equal-length update patches in place", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const ul = document.createElement("ul");
+      document.body.appendChild(ul);
+      const start = document.createComment("s");
+      const end = document.createComment("e");
+      ul.appendChild(start);
+      ul.appendChild(end);
+      const mk = (label: string) => ({ t: "li", p: {}, c: [label] });
+      let tracked = w.$__uni_reconcile_list(start, end, [mk("A"), mk("B")], null);
+      const firstBefore = start.nextSibling;
+      tracked = w.$__uni_reconcile_list(start, end, [mk("A2"), mk("B2")], tracked);
+      const out = { identity: start.nextSibling === firstBefore, text: start.nextSibling.textContent };
+      ul.remove();
+      return out;
+    });
+    expect(result).toEqual({ identity: true, text: "A2" });
+  });
+
+  test("$__uni_reconcile_list: keyed update preserves child input identity and value", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const ul = document.createElement("ul");
+      document.body.appendChild(ul);
+      const start = document.createComment("s");
+      const end = document.createComment("e");
+      ul.appendChild(start);
+      ul.appendChild(end);
+      const item = (k: string, label: string) => ({
+        t: "li",
+        p: { key: k },
+        c: [{ t: "input", p: { type: "text" }, c: [] }, label],
+      });
+      let tracked = w.$__uni_reconcile_list(start, end, [item("a", "A")], null);
+      const input = start.nextSibling.firstChild;
+      input.value = "typed";
+      tracked = w.$__uni_reconcile_list(start, end, [item("a", "B")], tracked);
+      const input2 = start.nextSibling.firstChild;
+      const out = { identity: input === input2, value: input2.value, text: start.nextSibling.textContent };
+      ul.remove();
+      return out;
+    });
+    expect(result).toEqual({ identity: true, value: "typed", text: "B" });
+  });
+
   test("$__uni_dispose: runs effect cleanups and releases resources", async () => {
     const result = await page.evaluate(() => {
       const w = window as any;
@@ -194,6 +266,32 @@ test.describe.serial("Runtime unit", () => {
     });
     expect(result.count).toBe(2);
     expect(result.hasDispose).toBe(true);
+  });
+
+  test("context: providers are scoped per instance and resolve up the tree", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const prev = w.$__uni_current_instance;
+      const outer: any = { parent: null, _contexts: {} };
+      w.$__uni_current_instance = outer;
+      const outerCtx = w.$_r.createContext("scope-test", "outer-default");
+      outerCtx.value = "OUTER";
+      const inner: any = { parent: outer, _contexts: {} };
+      w.$__uni_current_instance = inner;
+      const innerCtx = w.$_r.createContext("scope-test", "inner-default");
+      innerCtx.value = "INNER";
+      // Nearest provider wins.
+      w.$__uni_current_instance = { parent: inner, _contexts: {} };
+      const gotInner = w.$_r.useContext("scope-test").value;
+      w.$__uni_current_instance = { parent: outer, _contexts: {} };
+      const gotOuter = w.$_r.useContext("scope-test").value;
+      // No provider in scope -> process-wide default.
+      w.$__uni_current_instance = { parent: null, _contexts: {} };
+      const gotDefault = w.$_r.useContext("scope-test").value;
+      w.$__uni_current_instance = prev;
+      return { gotInner, gotOuter, gotDefault };
+    });
+    expect(result).toEqual({ gotInner: "INNER", gotOuter: "OUTER", gotDefault: "outer-default" });
   });
 
   test("$__uni_shallow_equal: element-wise equality", async () => {
