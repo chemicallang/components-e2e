@@ -1147,6 +1147,31 @@
     </div>
 }
 
+// Keyed list of components with internal state: a reorder must move each item's
+// DOM (and keep its mounted state) rather than rebuilding it. Also exercises
+// component props inside `.map()` being resolved during SSR.
+#universal KeyedComponentRow(props) {
+    state hits = 0
+    return <li data-testid={"crow-" + props.id}>
+        <button data-testid={"crow-inc-" + props.id} onClick={() => { hits = hits + 1 }}>+</button>
+        <span data-testid={"crow-hits-" + props.id}>{hits}</span>
+        <span data-testid={"crow-label-" + props.id}>{props.label}</span>
+    </li>
+}
+
+#universal KeyedComponentListFixture(props) {
+    state items = [{id: "a", label: "Alpha"}, {id: "b", label: "Beta"}, {id: "c", label: "Gamma"}]
+    return <div data-testid="keyed-comp-fixture">
+        <ul data-testid="keyed-comp-list">
+            {items.map(item => <KeyedComponentRow key={item.id} id={item.id} label={item.label} />)}
+        </ul>
+        <Button data-testid="keyed-comp-reverse" onClick={() => { items = [...items].reverse() }}>Reverse</Button>
+        <Button data-testid="keyed-comp-relabel-a" onClick={() => {
+            items = items.map(it => it.id == "a" ? {id: "a", label: "Alpha2"} : it)
+        }}>Relabel A</Button>
+    </div>
+}
+
 #universal ErrorBoundaryChildFixture(props) {
     useErrorBoundary((p, err) => {
         return <div data-testid="parent-fallback">Parent caught: {err.message}</div>
@@ -1246,6 +1271,25 @@
     return <section data-testid="static-children-host">{props.children}</section>
 }
 
+// Async data + Suspense boundary. The load resolves after a short delay; SSR
+// renders the fallback (initial loading state), and the client swaps to the
+// content once the timeout fires.
+#universal SuspenseFixture(props) {
+    state loading = true
+    state data = ""
+    useEffect(() => {
+        setTimeout(() => {
+            data = "Loaded data"
+            loading = false
+        }, 40)
+    }, [])
+    return <div data-testid="suspense-fixture">
+        <Suspense loading={loading} fallback="Loading…">
+            <span data-testid="suspense-content">{data}</span>
+        </Suspense>
+    </div>
+}
+
 public func main() : int {
     var page = HtmlPage()
     page.appendTitle("Components E2E")
@@ -1336,6 +1380,7 @@ public func main() : int {
             <DerivedListProbe />
             <PropsDerivedFixture />
             <KeyedListFixture />
+            <KeyedComponentListFixture />
             <ErrorBoundaryChildFixture />
             <MemoFixture />
             <SvgFixture />
@@ -1345,6 +1390,7 @@ public func main() : int {
                 <span data-testid="sc-child">hello</span>
                 <em data-testid="sc-child2" data-n="2">world</em>
             </StaticChildrenHost>
+            <SuspenseFixture />
         </main>
     }
 

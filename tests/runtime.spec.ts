@@ -453,6 +453,33 @@ test.describe.serial("Runtime", () => {
     expect(errors, errors.join("\n")).toEqual([]);
   });
 
+  test("keyed component list: reorder preserves item state and order", async () => {
+    const errors: string[] = [];
+    page.on("pageerror", (err) => errors.push(String(err)));
+    await page.goto("/");
+    await page.waitForTimeout(200);
+    const f = page.getByTestId("keyed-comp-fixture");
+    const list = f.getByTestId("keyed-comp-list");
+
+    // Give row "a" internal state, then reorder: the item must move, not
+    // re-mount, so its counter survives.
+    await f.getByTestId("crow-inc-a").click();
+    await f.getByTestId("crow-inc-a").click();
+    await expect(f.getByTestId("crow-hits-a")).toHaveText("2");
+
+    await f.getByTestId("keyed-comp-reverse").click();
+    const rows = list.locator("li");
+    await expect(rows.nth(0)).toHaveAttribute("data-testid", "crow-c");
+    await expect(rows.nth(1)).toHaveAttribute("data-testid", "crow-b");
+    await expect(rows.nth(2)).toHaveAttribute("data-testid", "crow-a");
+    await expect(f.getByTestId("crow-hits-a")).toHaveText("2");
+
+    // Changed props still update an item's content.
+    await f.getByTestId("keyed-comp-relabel-a").click();
+    await expect(f.getByTestId("crow-label-a")).toHaveText("Alpha2");
+    expect(errors, errors.join("\n")).toEqual([]);
+  });
+
   // ===========================================================================
   // Error boundary hierarchy tests
   // ===========================================================================
@@ -558,5 +585,16 @@ test.describe.serial("Runtime", () => {
     await page.goto("/");
     await page.waitForTimeout(200);
     await expect(page.getByTestId("ref-child-root")).toHaveText("child content");
+  });
+
+  // ===========================================================================
+  // SUSPENSE / ASYNC DATA
+  // ===========================================================================
+
+  test("suspense: swaps fallback for content once the async load resolves", async () => {
+    await page.goto("/");
+    const f = page.getByTestId("suspense-fixture");
+    await expect(f.getByTestId("suspense-content")).toHaveText("Loaded data");
+    await expect(f.locator(".chx-suspense-fallback")).toHaveCount(0);
   });
 });

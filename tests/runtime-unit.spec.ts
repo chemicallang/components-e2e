@@ -209,6 +209,68 @@ test.describe.serial("Runtime unit", () => {
     expect(result).toEqual({ identity: true, text: "A2" });
   });
 
+  test("$__uni_reconcile_list: unkeyed insertion preserves existing node identity", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const ul = document.createElement("ul");
+      document.body.appendChild(ul);
+      const start = document.createComment("s");
+      const end = document.createComment("e");
+      ul.appendChild(start);
+      ul.appendChild(end);
+      const mk = (label: string) => ({ t: "li", p: {}, c: [label] });
+      let tracked = w.$__uni_reconcile_list(start, end, [mk("A"), mk("B")], null);
+      const firstBefore = start.nextSibling;
+      const secondBefore = firstBefore.nextSibling;
+      tracked = w.$__uni_reconcile_list(start, end, [mk("A"), mk("B"), mk("C")], tracked);
+      const labels: string[] = [];
+      let n = start.nextSibling;
+      while (n && n !== end) { labels.push(n.textContent); n = n.nextSibling; }
+      const out = {
+        firstIdentity: start.nextSibling === firstBefore,
+        secondIdentity: firstBefore.nextSibling === secondBefore,
+        labels,
+        trackedLength: tracked.length,
+      };
+      ul.remove();
+      return out;
+    });
+    expect(result).toEqual({
+      firstIdentity: true,
+      secondIdentity: true,
+      labels: ["A", "B", "C"],
+      trackedLength: 3,
+    });
+  });
+
+  test("$__uni_reconcile_list: unkeyed removal drops only the removed node", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const ul = document.createElement("ul");
+      document.body.appendChild(ul);
+      const start = document.createComment("s");
+      const end = document.createComment("e");
+      ul.appendChild(start);
+      ul.appendChild(end);
+      const mk = (label: string) => ({ t: "li", p: {}, c: [label] });
+      let tracked = w.$__uni_reconcile_list(start, end, [mk("A"), mk("B"), mk("C")], null);
+      const firstBefore = start.nextSibling;
+      const lastBefore = firstBefore.nextSibling.nextSibling;
+      tracked = w.$__uni_reconcile_list(start, end, [mk("A"), mk("C")], tracked);
+      const labels: string[] = [];
+      let n = start.nextSibling;
+      while (n && n !== end) { labels.push(n.textContent); n = n.nextSibling; }
+      const out = {
+        firstIdentity: start.nextSibling === firstBefore,
+        lastDetached: lastBefore.parentNode === null,
+        labels,
+      };
+      ul.remove();
+      return out;
+    });
+    expect(result).toEqual({ firstIdentity: true, lastDetached: true, labels: ["A", "C"] });
+  });
+
   test("$__uni_reconcile_list: keyed update preserves child input identity and value", async () => {
     const result = await page.evaluate(() => {
       const w = window as any;
@@ -351,5 +413,165 @@ test.describe.serial("Runtime unit", () => {
       return { nextIsB: next === b };
     });
     expect(result.nextIsB).toBe(true);
+  });
+
+  test("$__uni_push_ctx/$__uni_pop_ctx: nested contexts restore exactly", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      w.$__uni_current_instance = null;
+      w.$__uni_current_boundary = null;
+      w.$__uni_render_instance = null;
+      const a: any = { id: "a" };
+      const b: any = { id: "b" };
+      w.$__uni_push_ctx({ instance: a, boundary: a, renderInstance: a });
+      const afterA = {
+        inst: w.$__uni_current_instance,
+        boundary: w.$__uni_current_boundary,
+        render: w.$__uni_render_instance,
+      };
+      w.$__uni_push_ctx({ instance: b, boundary: b, renderInstance: b });
+      const afterB = w.$__uni_current_instance;
+      w.$__uni_pop_ctx();
+      const restoredA = {
+        inst: w.$__uni_current_instance,
+        boundary: w.$__uni_current_boundary,
+        render: w.$__uni_render_instance,
+      };
+      w.$__uni_pop_ctx();
+      const restoredTop = {
+        inst: w.$__uni_current_instance,
+        boundary: w.$__uni_current_boundary,
+        render: w.$__uni_render_instance,
+      };
+      return {
+        afterA: afterA.inst === a && afterA.boundary === a && afterA.render === a,
+        afterB: afterB === b,
+        restoredA: restoredA.inst === a && restoredA.boundary === a && restoredA.render === a,
+        restoredTop: restoredTop.inst === null && restoredTop.boundary === null && restoredTop.render === null,
+      };
+    });
+    expect(result).toEqual({ afterA: true, afterB: true, restoredA: true, restoredTop: true });
+  });
+
+  test("$__uni_mount: component body runs under its instance and restores after", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const host = document.createElement("div");
+      document.body.appendChild(host);
+      let during: any = null;
+      const comp = (_props: any) => {
+        during = w.$__uni_current_instance;
+        return { t: "span", p: {}, c: ["x"] };
+      };
+      w.$__uni_mount(host, comp, {});
+      const out = {
+        duringOwnsHost: !!(during && during.host === host),
+        after: w.$__uni_current_instance,
+      };
+      host.remove();
+      return out;
+    });
+    expect(result.duringOwnsHost).toBe(true);
+    expect(result.after).toBeNull();
+  });
+
+  test("$__uni_run_effects: effects run inside the owning instance context", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const inst: any = { effects: [], layoutEffects: [], children: [], _disposables: [], _resources: [], _contexts: {} };
+      let seen: any = "unset";
+      inst.effects.push({
+        fn: () => { seen = w.$__uni_current_instance; },
+        deps: null,
+        lastDeps: null,
+        cleanup: null,
+        depUnsubs: [],
+      });
+      w.$__uni_run_effects(inst, inst.effects);
+      return { duringOwnsInstance: seen === inst, after: w.$__uni_current_instance };
+    });
+    expect(result.duringOwnsInstance).toBe(true);
+    expect(result.after).toBeNull();
+  });
+
+  test("$__uni_reconcile_list: keyed fragment items move as a unit", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const ul = document.createElement("ul");
+      document.body.appendChild(ul);
+      const start = document.createComment("s");
+      const end = document.createComment("e");
+      ul.appendChild(start);
+      ul.appendChild(end);
+      // A keyed fragment renders several nodes per item; a reorder must move the
+      // whole range, not rebuild (and orphan) the individual nodes.
+      const frag = (k: string, label: string) => ({
+        t: w.$_ur.Fragment,
+        p: { key: k },
+        c: [
+          { t: "li", p: { "data-k": k }, c: [label] },
+          { t: "span", p: { "data-k": k }, c: [label + "2"] },
+        ],
+      });
+      let tracked = w.$__uni_reconcile_list(start, end, [frag("a", "A"), frag("b", "B")], null);
+      const aLi = ul.querySelector('[data-k="a"]') as any;
+      const aSpan = ul.querySelectorAll('[data-k="a"]')[1] as any;
+      tracked = w.$__uni_reconcile_list(start, end, [frag("b", "B"), frag("a", "A")], tracked);
+      const order = [...ul.querySelectorAll("[data-k]")].map((e: any) => e.getAttribute("data-k")).join("");
+      const out = {
+        order,
+        aLiPreserved: ul.querySelector('[data-k="a"]') === aLi,
+        aSpanPreserved: ul.querySelectorAll('[data-k="a"]')[1] === aSpan,
+        count: ul.querySelectorAll("[data-k]").length,
+      };
+      ul.remove();
+      return out;
+    });
+    expect(result).toEqual({ order: "bbaa", aLiPreserved: true, aSpanPreserved: true, count: 4 });
+  });
+
+  test("$__uni_reconcile_list: keyed component items move without re-mount", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const ul = document.createElement("ul");
+      document.body.appendChild(ul);
+      const start = document.createComment("s");
+      const end = document.createComment("e");
+      ul.appendChild(start);
+      ul.appendChild(end);
+      // A component vnode (`$_uc_c`) carries its key in p.props.key. A pure
+      // reorder with equal props must keep the mounted DOM/instance; changed
+      // props must update the content.
+      const Row = (props: any) => ({ t: "li", p: { "data-c": props.id }, c: [props.label] });
+      const item = (id: string, label: string) => w.$_uc_c(Row, { key: id, id, label });
+      let tracked = w.$__uni_reconcile_list(start, end, [item("a", "A"), item("b", "B")], null);
+      const aNode = ul.querySelector('[data-c="a"]') as any;
+      tracked = w.$__uni_reconcile_list(start, end, [item("b", "B"), item("a", "A")], tracked);
+      const order = [...ul.querySelectorAll("[data-c]")].map((e: any) => e.getAttribute("data-c")).join("");
+      const preserved = ul.querySelector('[data-c="a"]') === aNode;
+      tracked = w.$__uni_reconcile_list(start, end, [item("b", "B"), item("a", "A2")], tracked);
+      const textA = (ul.querySelector('[data-c="a"]') as any).textContent;
+      ul.remove();
+      return { order, preserved, textA };
+    });
+    expect(result).toEqual({ order: "ba", preserved: true, textA: "A2" });
+  });
+
+  test("$__uni_range_move: moves every node of a multi-node range", async () => {
+    const result = await page.evaluate(() => {
+      const w = window as any;
+      const parent = document.createElement("div");
+      const before = document.createElement("p");
+      parent.appendChild(before);
+      const first = document.createElement("i");
+      const mid = document.createElement("b");
+      const last = document.createElement("u");
+      parent.appendChild(first);
+      parent.appendChild(mid);
+      parent.appendChild(last);
+      w.$__uni_range_move({ first, last }, before);
+      return [...parent.childNodes].map((n: any) => n.tagName.toLowerCase()).join(",");
+    });
+    expect(result).toBe("i,b,u,p");
   });
 });

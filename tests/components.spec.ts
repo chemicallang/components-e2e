@@ -97,6 +97,20 @@ test("tabs switch panels on click", async () => {
   await expect(f.getByRole("tabpanel", { name: "Alpha" })).toBeHidden();
 });
 
+test("tabs mark the active tab", async () => {
+  await page.goto("/");
+  const f = page.getByTestId("tabs-fixture");
+  const alpha = f.getByRole("tab", { name: "Alpha" });
+  const beta = f.getByRole("tab", { name: "Beta" });
+  await expect(alpha).toHaveAttribute("data-active", "true");
+  await expect(alpha).toHaveAttribute("aria-selected", "true");
+  await expect(beta).toHaveAttribute("data-active", "false");
+  await beta.click();
+  await expect(beta).toHaveAttribute("data-active", "true");
+  await expect(beta).toHaveAttribute("aria-selected", "true");
+  await expect(alpha).toHaveAttribute("data-active", "false");
+});
+
 test("tabs arrow keys navigate", async () => {
   await page.goto("/");
   const f = page.getByTestId("tabs-fixture");
